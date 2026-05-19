@@ -1,9 +1,9 @@
 import express from "express";
 import cors from "cors";
 import "dotenv/config";
-import connectDB from "./config/db.js"; // Import từ file config sếp vừa tạo
+import connectDB from "./config/db.js";
 
-// Import Routes (Sếp nhớ kiểm tra đường dẫn file nhé)
+// Import Routes
 import vocabRoute from "./routes/vocab.js";
 import chatbotRoutes from "./routes/chatbot.js";
 // import noteRoutes from "./routes/notes.js"; // Nếu bản V2 vẫn dùng thì mở ra
