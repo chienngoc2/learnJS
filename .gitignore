@@ -1,0 +1,18 @@
+# 1. Các file biến môi trường (Tuyệt đối không push để bảo mật)
+.env
+.env.*
+
+# 2. Thư mục chứa thư viện (Rất nặng, Render sẽ tự cài lại)
+node_modules/
+
+# 3. Thư mục code đã build của TypeScript (Không cần push)
+dist/
+build/
+
+# 4. Các file rác của hệ điều hành (Không cần thiết)
+.DS_Store
+Thumbs.db
+
+# 5. Các file log lỗi của NPM
+npm-debug.log*
+yarn-error.log*
