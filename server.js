@@ -14,7 +14,13 @@ const app = express();
 connectDB();
 
 // 2. Cấu hình Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: "*", 
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  }),
+);
 app.use(express.json());
 // app.use(express.static("public")); // Nếu chỉ làm API cho Mobile thì không cần dòng này
 
@@ -25,15 +31,16 @@ app.use("/api/vocab", vocabRoute);
 app.use("/api/rag", ragRoutes);
 
 // 4. Khởi động Server
-const PORT = process.env.PORT || 5000; // Thường BE để 5000 để tránh đụng 3000 của FE
+const PORT = process.env.PORT ||5000 ; // Thường BE để 5000 để tránh đụng 3000 của FE
 
 app.listen(PORT, () => {
+  const isProduction = process.env.MONGODB_URI;
   console.log(`
 =================================================
-🚀 SERVER V2.0 ĐÃ KHỞI ĐỘNG THÀNH CÔNG!
+🚀 SERVER ĐÃ KHỞI ĐỘNG THÀNH CÔNG!
 =================================================
-🌍 Chế độ: ${process.env.MONGODB_URI ? "PRODUCTION (Cloud)" : "DEVELOPMENT (Local)"}
-🔗 URL: http://localhost:${PORT}
+🌍 Chế độ: ${isProduction ? "PRODUCTION (Cloud)" : "DEVELOPMENT (Local)"}
+🔗 URL: ${isProduction ? "Đang chạy trên Render Cloud" : `http://localhost:${PORT}`}
 =================================================
   `);
 });
