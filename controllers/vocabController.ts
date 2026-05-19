@@ -146,7 +146,7 @@ export const deleteList = async (req: Request, res: Response): Promise<void> => 
 // 🔥 3. CÁC HÀM XỬ LÝ NGỮ PHÁP TỐI ƯU HÓA (GRAMMAR CONTROLLERS)
 // =========================================================================
 
-// @desc    Thêm mới cấu trúc ngữ pháp vào bài học (Upsert theo Title bài gốc)
+// @desc    Thêm mới hoặc tạo mới bài học chứa ngữ pháp
 // @route   POST /api/vocab/add-grammar-upsert
 export const addOrUpdateGrammar = async (
   req: Request<{}, {}, AddGrammarReqBody>, 
@@ -156,40 +156,47 @@ export const addOrUpdateGrammar = async (
     const { topicName, grammarPoints } = req.body;
 
     if (!topicName || !grammarPoints || grammarPoints.length === 0) {
-      res.status(400).json({ 
-        success: false, 
-        message: "Thiếu tên bài học hoặc dữ liệu ngữ pháp sếp ơi!" 
-      });
+      res.status(400).json({ success: false, message: "Thiếu dữ liệu sếp ơi!" });
       return;
     }
 
     const cleanTopicName = topicName.trim();
 
-    const result = await VocabList.findOneAndUpdate(
-      { title: cleanTopicName }, 
-      { 
-        $push: { 
-          grammarPoints: { $each: grammarPoints } 
-        } 
-      },
-      { 
-        new: true, 
-        upsert: true, 
-        setDefaultsOnInsert: true 
-      }
-    );
+    // 1. Tìm xem bài học đã tồn tại chưa
+    const existingList = await VocabList.findOne({ title: cleanTopicName });
 
-    res.status(200).json({ 
-      success: true, 
-      message: "Đã lưu tài liệu ngữ pháp kèm danh sách ví dụ thành công!",
-      data: result 
-    });
+    if (existingList) {
+      // TRƯỜNG HỢP 1: Tồn tại -> Chỉ cần Push thêm vào mảng cũ
+      await VocabList.updateOne(
+        { _id: existingList._id },
+        { $push: { grammarPoints: { $each: grammarPoints } } }
+      );
+      
+      res.status(200).json({ 
+        success: true, 
+        message: "Đã thêm ngữ pháp vào bài học hiện có!" 
+      });
+    } else {
+      // TRƯỜNG HỢP 2: Chưa tồn tại -> Tạo mới hoàn toàn
+      const newList = new VocabList({
+        title: cleanTopicName,
+        grammarPoints: grammarPoints,
+        words: [] // Khởi tạo mảng trống để không vi phạm Schema (nếu có yêu cầu)
+      });
+      
+      await newList.save();
+      
+      res.status(200).json({ 
+        success: true, 
+        message: "Đã tạo mới bài học và lưu ngữ pháp thành công!" 
+      });
+    }
+
   } catch (error: any) {
-    console.error("❌ Lỗi thêm/cập nhật ngữ pháp tổng thể:", error.message);
-    res.status(500).json({ success: false, message: "Lỗi Server nội bộ khi nạp thẻ." });
+    console.error("❌ Lỗi logic thêm/tạo bài học:", error.message);
+    res.status(500).json({ success: false, message: "Lỗi Server nội bộ." });
   }
 };
-
 // @desc    Cập nhật 1 cấu trúc ngữ pháp cụ thể bằng cách định vị cặp ID truyền vào
 // @route   PUT /api/vocab/update-grammar/:topicId/:grammarId
 export const updateSingleGrammar = async (req: Request, res: Response): Promise<void> => {
