@@ -2,7 +2,7 @@
 
 import type { Request, Response } from "express";
 import mongoose from "mongoose";
-import VocabList from "../models/VocabList.ts"; // Sếp kiểm tra lại hậu tố .ts/.js tùy cấu hình dự án nha
+import VocabList from "../models/VocabList.js"; // Sếp kiểm tra lại hậu tố .ts/.js tùy cấu hình dự án nha
 
 // =========================================================================
 // 📦 1. ĐỊNH NGHĨA CÁC INTERFACES (Gom lên đầu trang, chuẩn hóa examples[])
