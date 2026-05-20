@@ -3,7 +3,7 @@
 import type { Request, Response } from "express"; // 🚀 Dùng 'import type' để xóa sạch lỗi CommonJS lúc nãy
 import { Pinecone } from "@pinecone-database/pinecone";
 import { GoogleGenerativeAI } from "@google/generative-ai"; // 🚀 Đã sửa lại tên Class chuẩn của Google
-import VocabList from "../models/VocabList.ts";
+import VocabList from "../models/VocabList.js";
 // 1. Định nghĩa Interface cho Request Body để TypeScript quản lý chặt chẽ
 interface QuizRequestBody {
   topicId: string;

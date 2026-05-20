@@ -3,7 +3,7 @@
 import type { Request, Response } from "express";
 import { Pinecone } from "@pinecone-database/pinecone";
 import Groq from "groq-sdk";
-import VocabList from "../models/VocabList.ts"; 
+import VocabList from "../models/VocabList.js"; 
 
 // =========================================================================
 // 📦 1. ĐỊNH NGHĨA CÁC INTERFACES MẪU (Gom gọn lên đầu trang quản lý chặt chẽ)

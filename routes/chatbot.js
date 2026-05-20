@@ -5,7 +5,7 @@ import {
   handleChat,
   saveHistory,
   generateDirectGrammarQuiz,
-} from "../controllers/chatController.ts";
+} from "../controllers/chatController.js";
 
 const router = express.Router();
 
