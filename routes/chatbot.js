@@ -1,5 +1,5 @@
 import express from "express";
-import { upload } from "../utils/upload.js";
+import upload from "../utils/upload.js";
 import {
   transcribe,
   handleChat,
