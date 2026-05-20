@@ -1,13 +1,13 @@
 {
-  "name": "ai_sensei_server",
+  "name": "backend-sensei",
   "version": "1.0.0",
-  "description": "Backend for AI Japanese Learning App",
-  "main": "server.js",
   "type": "module",
- "scripts": {
-    "dev": "nodemon src/index.ts", 
-    "build": "tsc",
-    "start": "node dist/index.js" 
+  "engines": {
+    "node": "18.x"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "Chien Pham",
