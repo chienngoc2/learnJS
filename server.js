@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import "dotenv/config";
+
 import connectDB from "./config/db.js";
 
 // Import Routes
@@ -8,6 +8,9 @@ import vocabRoute from "./routes/vocab.js";
 import chatbotRoutes from "./routes/chatbot.js";
 // import noteRoutes from "./routes/notes.js"; // Nếu bản V2 vẫn dùng thì mở ra
 import ragRoutes from "./routes/ragRoutes.js";
+
+import dotenv from "dotenv";
+dotenv.config();
 const app = express();
 
 // 1. Kết nối Database
