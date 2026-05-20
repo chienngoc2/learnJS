@@ -1,13 +1,11 @@
 {
   "name": "backend-sensei",
   "version": "1.0.0",
-  "type": "module",
   "engines": {
     "node": "24.x"
   },
   "scripts": {
-    "start": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js"
   },
   "keywords": [],
   "author": "Chien Pham",
