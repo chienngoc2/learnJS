@@ -287,12 +287,12 @@ export const generateDirectGrammarQuiz = async (
           - Công thức: ${formula || "Chưa có"}
           - Ý nghĩa: ${meaning}
 
-          🔥 3 QUY TẮC THÉP TẠO ĐỀ (CÂN BẰNG NGỮ PHÁP & NGỮ CẢNH):
+           3 QUY TẮC THÉP TẠO ĐỀ (CÂN BẰNG NGỮ PHÁP & NGỮ CẢNH):
           1. BÁM SÁT NGỮ PHÁP LÀ SỐ 1: Câu hỏi phải lấy cấu trúc [${title}] làm trung tâm. Cấu trúc câu cần NGẮN GỌN, RÕ RÀNG, đi thẳng vào vấn đề. Tuyệt đối không được nhồi nhét quá nhiều mệnh đề phụ dài dòng làm lu mờ ngữ pháp chính.
-          2. NGỮ CẢNH ĐA DẠNG, THỰC CHIẾN: 🚫 Cấm dùng các ví dụ sách giáo khoa trẻ con (như: đi học, ăn táo, xem phim, thời tiết). ✅ HÃY THAY BẰNG từ vựng của người trưởng thành/đi làm: chốt lịch họp, gửi email, đi công tác, báo cáo sếp, đi siêu thị, nhà hàng, kẹt xe, du lịch, v.v. (Nhưng vẫn phải giữ câu ngắn gọn).
+          2. NGỮ CẢNH ĐA DẠNG, THỰC CHIẾN:  Cấm dùng các ví dụ sách giáo khoa trẻ con (như: đi học, ăn táo, xem phim, thời tiết). ✅ HÃY THAY BẰNG từ vựng của người trưởng thành/đi làm: chốt lịch họp, gửi email, đi công tác, báo cáo sếp, đi siêu thị, nhà hàng, kẹt xe, du lịch, v.v. (Nhưng vẫn phải giữ câu ngắn gọn).
           3. KANJI N5 BẮT BUỘC: CHỈ DÙNG Kanji siêu cơ bản N5 (私, 人, 行, 見, 食, 買, 今, 何...). Mọi từ vựng khó khác BẮT BUỘC viết bằng Hiragana (ví dụ: かいぎ, しゅっちょう, ざんぎょう) để học viên dễ đọc.
 
-          🎯 THỂ LOẠI ĐỀ BẮT BUỘC: "${type || "type_jp"}"
+           THỂ LOẠI ĐỀ BẮT BUỘC: "${type || "type_jp"}"
           - Dạng "type_jp": 'question' = Câu tiếng Việt, 'correctAnswer' = Câu tiếng Nhật tương ứng (Chỉ Kanji N5 + Hiragana).
           - Dạng "translate_vi": 'question' = Câu tiếng Nhật, 'correctAnswer' = Dịch sát nghĩa sang tiếng Việt.
 
@@ -306,7 +306,7 @@ export const generateDirectGrammarQuiz = async (
         }
       ],
       model: "llama-3.3-70b-versatile", 
-      temperature: 0.6, // 🚀 CHỐT NHIỆT ĐỘ 0.6: Vừa đủ để thay đổi từ vựng, vừa đủ logic để giữ chặt cấu trúc ngữ pháp
+      temperature: 0.4, 
       response_format: { type: "json_object" } 
     });
 

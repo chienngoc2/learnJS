@@ -20,7 +20,7 @@ export const generateQuizByTopic = async (
   try {
     const { topicId, userMessage } = req.body;
 
-    // 🚀 BƯỚC 1: Tìm kiếm ngữ cảnh trên Pinecone TRƯỚC để check xem "đã có bài chưa"
+    //
     const index = pc.index(process.env.PINECONE_INDEX_NAME as string);
     
     const searchResults = await index.searchRecords({

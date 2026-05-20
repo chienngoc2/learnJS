@@ -16,7 +16,7 @@ connectDB();
 // 2. Cấu hình Middleware
 app.use(
   cors({
-    origin: "*", 
+    origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   }),
@@ -30,17 +30,23 @@ app.use("/api/vocab", vocabRoute);
 // app.use("/api/notes", noteRoutes);
 app.use("/api/rag", ragRoutes);
 
-// 4. Khởi động Server
-const PORT = process.env.PORT ||5000 ; // Thường BE để 5000 để tránh đụng 3000 của FE
+const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  const isProduction = process.env.MONGODB_URI;
-  console.log(`
-=================================================
-🚀 SERVER ĐÃ KHỞI ĐỘNG THÀNH CÔNG!
-=================================================
-🌍 Chế độ: ${isProduction ? "PRODUCTION (Cloud)" : "DEVELOPMENT (Local)"}
-🔗 URL: ${isProduction ? "Đang chạy trên Render Cloud" : `http://localhost:${PORT}`}
-=================================================
-  `);
-});
+// Chỉ chạy app.listen khi sếp code ở máy local
+if (process.env.NODE_ENV !== "production") {
+  app.listen(PORT, () => {
+    const isRender = process.env.MONGODB_URI;
+    console.log(`
+    =================================================
+    🚀 SERVER ĐÃ KHỞI ĐỘNG THÀNH CÔNG!
+    =================================================
+    🌍 Chế độ: DEVELOPMENT (Local)
+    🔗 URL: http://localhost:${PORT}
+    =================================================
+    `);
+  });
+}
+
+// 🔥 BẮT BUỘC PHẢI CÓ DÒNG NÀY CHO VERCEL:
+// Xuất app ra để hệ thống Serverless của Vercel tự động tiếp quản
+export default app;
