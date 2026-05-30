@@ -205,7 +205,7 @@ export const updateSingleGrammar = async (req: Request, res: Response): Promise<
     const grammarId = req.params.grammarId as string;
     const { title, formula, meaning, examples, topicName } = req.body;
 
-    // 🚀 CHẮN LỖI PARAMS: Ép kiểm tra xem 2 ID nhảy từ route sang có chuẩn cấu trúc Mongo hay không
+    //  CHẮN LỖI PARAMS: Ép kiểm tra xem 2 ID nhảy từ route sang có chuẩn cấu trúc Mongo hay không
     if (!mongoose.Types.ObjectId.isValid(topicId) || !mongoose.Types.ObjectId.isValid(grammarId)) {
       res.status(400).json({ 
         success: false, 

@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 
 import connectDB from "./config/db.js";
-
+import kanjiRoutes from "./routes/kanji.js";
 // Import Routes
 import vocabRoute from "./routes/vocab.js";
 import chatbotRoutes from "./routes/chatbot.js";
@@ -32,6 +32,7 @@ app.use("/api/chat", chatbotRoutes);
 app.use("/api/vocab", vocabRoute);
 // app.use("/api/notes", noteRoutes);
 app.use("/api/rag", ragRoutes);
+app.use("/api/kanji", kanjiRoutes);
 
 const PORT = process.env.PORT || 5000;
 

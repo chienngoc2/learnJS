@@ -1,7 +1,7 @@
 // File: routes/ragRoutes.js
 
 import express from "express";
-import { generateQuizByTopic } from "../controllers/ragController.js";
+import { generateQuizByTopic } from "../controllers/ragController.ts";
 
 const router = express.Router();
 

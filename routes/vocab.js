@@ -11,7 +11,7 @@ import {
   deleteSingleGrammar,
   updateSingleGrammar,
   getAllGrammarPointsOnly,
-} from "../controllers/vocabController.js";
+} from "../controllers/vocabController.ts";
 
 const router = express.Router();
 

@@ -5,7 +5,8 @@
     "node": "24.x"
   },
   "scripts": {
-    "start": "node index.js"
+    "start": "node server.js"
+    
   },
   "keywords": [],
   "author": "Chien Pham",

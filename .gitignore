@@ -16,3 +16,4 @@ Thumbs.db
 # 5. Các file log lỗi của NPM
 npm-debug.log*
 yarn-error.log*
+.vercel
