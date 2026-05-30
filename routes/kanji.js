@@ -1,5 +1,5 @@
 import express from "express";
-import { searchKanji } from "../controllers/kanjiController.ts";
+import { searchKanji } from "../controllers/kanjiController.js";
 
 const router = express.Router();
 
