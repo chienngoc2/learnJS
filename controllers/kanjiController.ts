@@ -414,3 +414,44 @@ export const getKanjiById = async (
     res.status(500).json({ success: false, error: err.message });
   }
 };
+
+// =========================================================================
+// 🗑️ 6b. XÓA TOÀN BỘ NHÓM BÀI HỌC KANJI
+// @route DELETE /api/kanji/group
+// =========================================================================
+export const deleteKanjiGroup = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const group = req.query.group as string;
+
+    if (group === undefined) {
+      res.status(400).json({
+        success: false,
+        message: "Thiếu tên nhóm bài học cần xóa sếp ơi!",
+      });
+      return;
+    }
+
+    const trimmedGroup = group.trim();
+
+    let query: any = {};
+    if (trimmedGroup === "__unnamed__" || trimmedGroup === "") {
+      query = { $or: [{ lessonGroup: "" }, { lessonGroup: { $exists: false } }, { lessonGroup: null }] };
+    } else {
+      query = { lessonGroup: trimmedGroup };
+    }
+
+    const result = await Kanji.deleteMany(query);
+
+    res.json({
+      success: true,
+      message: `🗑️ Đã xóa thành công bài học "${trimmedGroup === "__unnamed__" || trimmedGroup === "" ? "Chưa phân loại" : trimmedGroup}" (${result.deletedCount} chữ Kanji)!`,
+      deletedCount: result.deletedCount,
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+

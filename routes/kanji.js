@@ -8,6 +8,7 @@ import {
   updateKanji,
   deleteKanji,
   getKanjiById,
+  deleteKanjiGroup,
 } from "../controllers/kanjiController.js";
 
 const router = express.Router();
@@ -35,5 +36,8 @@ router.put("/update/:id", updateKanji);
 
 // DELETE /api/kanji/delete/:id                  → Xóa kanji theo ID
 router.delete("/delete/:id", deleteKanji);
+
+// DELETE /api/kanji/group                       → Xóa toàn bộ nhóm bài học Kanji
+router.delete("/group", deleteKanjiGroup);
 
 export default router;
