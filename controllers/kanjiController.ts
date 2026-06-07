@@ -207,15 +207,24 @@ export const addKanji = async (
 };
 
 // =========================================================================
-// 📦 4. THÊM HÀNG LOẠT KANJI (Bulk Insert từ JSON)
+// 📦 4. THÊM HÀNG LOẠT KANJI - UPSERT (Thêm mới hoặc cập nhật nếu trùng)
 // @route POST /api/kanji/bulk-add
+// Body: { items: KanjiItem[], defaultLessonGroup?: string, defaultLevel?: string }
 // =========================================================================
 export const bulkAddKanji = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
   try {
-    const { items } = req.body as { items: KanjiItem[] };
+    const {
+      items,
+      defaultLessonGroup = "",
+      defaultLevel = "",
+    } = req.body as {
+      items: KanjiItem[];
+      defaultLessonGroup?: string;
+      defaultLevel?: string;
+    };
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       res.status(400).json({
@@ -226,40 +235,51 @@ export const bulkAddKanji = async (
     }
 
     const results = {
-      success: 0,
-      skipped: 0,
+      added: 0,    // Thêm mới
+      updated: 0,  // Cập nhật (trùng)
       errors: [] as string[],
     };
 
     for (const item of items) {
       try {
-        if (!item.character || !item.meaning || !item.vietnamese_reading || !item.level) {
-          results.errors.push(`Thiếu field bắt buộc: ${JSON.stringify(item)}`);
+        if (!item.character || !item.meaning || !item.vietnamese_reading) {
+          results.errors.push(`Thiếu field (character/meaning/vietnamese_reading): ${item.character || "?"}`);
           continue;
         }
 
-        const existing = await Kanji.findOne({ character: item.character.trim() });
-        if (existing) {
-          results.skipped++;
-          continue;
-        }
+        // Xác định level: ưu tiên item > defaultLevel > "N5"
+        const finalLevel = (item.level?.trim() || defaultLevel?.trim() || "N5").toUpperCase();
+        // Xác định lessonGroup: ưu tiên item > defaultLessonGroup
+        const finalGroup = item.lessonGroup?.trim() || defaultLessonGroup?.trim() || "";
 
-        const newKanji = new Kanji({
-          character: item.character.trim(),
+        const updateData = {
           meaning: item.meaning.trim(),
           onyomi: item.onyomi?.trim() || "",
           kunyomi: item.kunyomi?.trim() || "",
           vietnamese_reading: item.vietnamese_reading.trim(),
-          level: item.level.trim().toUpperCase(),
-          stroke_order: (item as any).stroke_order || [],
-          example_words: (item as any).example_words || [],
-          components: item.components || [],
-          story: item.story?.trim() || "",
-          lessonGroup: item.lessonGroup?.trim() || "",
-        });
+          level: finalLevel,
+          ...(item.components && item.components.length > 0 && { components: item.components }),
+          ...(item.story?.trim() && { story: item.story.trim() }),
+          ...(finalGroup && { lessonGroup: finalGroup }),
+          ...((item as any).stroke_order?.length && { stroke_order: (item as any).stroke_order }),
+          ...((item as any).example_words?.length && { example_words: (item as any).example_words }),
+        };
 
-        await newKanji.save();
-        results.success++;
+        const existing = await Kanji.findOne({ character: item.character.trim() });
+
+        if (existing) {
+          // UPSERT: cập nhật thay vì bỏ qua
+          await Kanji.findByIdAndUpdate(existing._id, updateData, { new: true });
+          results.updated++;
+        } else {
+          // INSERT MỚI
+          const newKanji = new Kanji({
+            character: item.character.trim(),
+            ...updateData,
+          });
+          await newKanji.save();
+          results.added++;
+        }
       } catch (itemErr: any) {
         results.errors.push(`Lỗi "${item.character}": ${itemErr.message}`);
       }
@@ -267,13 +287,15 @@ export const bulkAddKanji = async (
 
     res.json({
       success: true,
-      message: `✅ Hoàn tất! Thêm mới: ${results.success}, Bỏ qua (đã tồn tại): ${results.skipped}, Lỗi: ${results.errors.length}`,
+      message: `✅ Hoàn tất! Thêm mới: ${results.added} | Cập nhật: ${results.updated} | Lỗi: ${results.errors.length}`,
       data: results,
     });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }
 };
+
+
 
 // =========================================================================
 // ✏️ 5. CẬP NHẬT KANJI THEO ID
