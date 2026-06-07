@@ -17,6 +17,9 @@ export interface IKanji extends Document {
   level: string;
   stroke_order: string[];
   example_words: IExampleWord[];
+  components?: string[];
+  story?: string;
+  lessonGroup?: string; // Tên bài học / bộ kanji (VD: "Bài 1 - Số đếm", "N5 Cơ bản")
   createdAt: Date;
   updatedAt: Date;
 }
@@ -31,8 +34,8 @@ const KanjiSchema: Schema<IKanji> = new Schema(
     vietnamese_reading: { type: String, required: true },
     level: {
       type: String,
-      required: true, // Ép buộc file JSON phải khai báo cấp độ, không cho phép bỏ trống
-      enum: ["N5", "N4", "N3", "N2", "N1"], // Chỉ chấp nhận 1 trong 5 giá trị này
+      required: true,
+      enum: ["N5", "N4", "N3", "N2", "N1"],
     },
     stroke_order: [{ type: String }],
     example_words: [
@@ -42,14 +45,16 @@ const KanjiSchema: Schema<IKanji> = new Schema(
         meaning: { type: String, required: true },
       },
     ],
+    components: [{ type: String }],
+    story: { type: String, default: "" },
+    lessonGroup: { type: String, default: "" }, // Bài học / Nhóm kanji
   },
   {
-    timestamps: true, // Tự động sinh ra trường createdAt và updatedAt kiểu Date
+    timestamps: true,
   },
 );
 
 // 4. Mẹo chống lỗi OverwriteModelError khi chạy trên môi trường Serverless (Vercel Dev)
-// Hệ thống sẽ check xem model Kanji đã được biên dịch trong bộ nhớ chưa, nếu có thì dùng lại, chưa thì mới tạo mới.
 const Kanji: Model<IKanji> =
   mongoose.models.Kanji || mongoose.model<IKanji>("Kanji", KanjiSchema);
 
