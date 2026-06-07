@@ -36,7 +36,7 @@ const ExampleWordSchema = {
 // ── Mongoose Schema ──
 const KanjiSchema: Schema<IKanji> = new Schema(
   {
-    character: { type: String, required: true, unique: true },
+    character: { type: String, required: true },
     meaning: { type: String, required: true },
     onyomi: { type: String, default: "" },
     kunyomi: { type: String, default: "" },

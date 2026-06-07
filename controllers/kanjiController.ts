@@ -179,11 +179,16 @@ export const addKanji = async (
     }
 
     // Kiểm tra trùng lặp
-    const existing = await Kanji.findOne({ character: body.character.trim() });
+    // Kiểm tra trùng lặp trong cùng nhóm bài học
+    const targetGroup = body.lessonGroup?.trim() || "";
+    const existing = await Kanji.findOne({
+      character: body.character.trim(),
+      lessonGroup: targetGroup,
+    });
     if (existing) {
       res.status(409).json({
         success: false,
-        message: `Kanji "${body.character}" đã tồn tại trong database rồi sếp ơi!`,
+        message: `Kanji "${body.character}" đã tồn tại trong bài học "${targetGroup}" rồi sếp ơi!`,
       });
       return;
     }
@@ -277,7 +282,10 @@ export const bulkAddKanji = async (
           ...(item.kunyomi_examples?.length && { kunyomi_examples: item.kunyomi_examples }),
         };
 
-        const existing = await Kanji.findOne({ character: item.character.trim() });
+        const existing = await Kanji.findOne({
+          character: item.character.trim(),
+          lessonGroup: finalGroup,
+        });
 
         if (existing) {
           // UPSERT: cập nhật thay vì bỏ qua
