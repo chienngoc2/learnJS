@@ -4,6 +4,12 @@ import Kanji from "../models/Kanji.js";
 // =========================================================================
 // 📦 INTERFACE CHUẨN CHO KANJI ITEM
 // =========================================================================
+interface ExampleWord {
+  word: string;
+  reading: string;
+  meaning: string;
+}
+
 interface KanjiItem {
   character: string;
   meaning: string;
@@ -13,9 +19,11 @@ interface KanjiItem {
   level: string;
   components?: string[];
   story?: string;
-  lessonGroup?: string; // Tên bài học / nhóm bộ
+  lessonGroup?: string;
   stroke_order?: string[];
-  example_words?: { word: string; reading: string; meaning: string }[];
+  example_words?: ExampleWord[];     // legacy, tổng quát
+  onyomi_examples?: ExampleWord[];   // 3-4 ví dụ âm ON
+  kunyomi_examples?: ExampleWord[];  // 3-4 ví dụ âm KUN
 }
 
 // =========================================================================
@@ -189,6 +197,8 @@ export const addKanji = async (
       level: body.level.trim().toUpperCase(),
       stroke_order: body.stroke_order || [],
       example_words: body.example_words || [],
+      onyomi_examples: body.onyomi_examples || [],
+      kunyomi_examples: body.kunyomi_examples || [],
       components: body.components || [],
       story: body.story?.trim() || "",
       lessonGroup: body.lessonGroup?.trim() || "",
@@ -261,8 +271,10 @@ export const bulkAddKanji = async (
           ...(item.components && item.components.length > 0 && { components: item.components }),
           ...(item.story?.trim() && { story: item.story.trim() }),
           ...(finalGroup && { lessonGroup: finalGroup }),
-          ...((item as any).stroke_order?.length && { stroke_order: (item as any).stroke_order }),
-          ...((item as any).example_words?.length && { example_words: (item as any).example_words }),
+          ...(item.stroke_order?.length && { stroke_order: item.stroke_order }),
+          ...(item.example_words?.length && { example_words: item.example_words }),
+          ...(item.onyomi_examples?.length && { onyomi_examples: item.onyomi_examples }),
+          ...(item.kunyomi_examples?.length && { kunyomi_examples: item.kunyomi_examples }),
         };
 
         const existing = await Kanji.findOne({ character: item.character.trim() });
@@ -321,6 +333,8 @@ export const updateKanji = async (
         ...(body.components && { components: body.components }),
         ...(body.story !== undefined && { story: body.story.trim() }),
         ...(body.lessonGroup !== undefined && { lessonGroup: body.lessonGroup.trim() }),
+        ...(body.onyomi_examples !== undefined && { onyomi_examples: body.onyomi_examples }),
+        ...(body.kunyomi_examples !== undefined && { kunyomi_examples: body.kunyomi_examples }),
       },
       { new: true },
     );
