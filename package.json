@@ -4,9 +4,9 @@
   "engines": {
     "node": "24.x"
   },
+  "type": "module",
   "scripts": {
-    "start": "node server.js"
-    
+    "start": "tsx server.js"
   },
   "keywords": [],
   "author": "Chien Pham",
