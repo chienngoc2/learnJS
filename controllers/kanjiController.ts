@@ -26,6 +26,13 @@ interface KanjiItem {
   kunyomi_examples?: ExampleWord[];  // 3-4 ví dụ âm KUN
 }
 
+const safeTrim = (val: any): string => {
+  if (typeof val === "string") return val.trim();
+  if (Array.isArray(val)) return val.map(v => String(v).trim()).filter(Boolean).join(", ");
+  return val ? String(val).trim() : "";
+};
+
+
 // =========================================================================
 // 🔍 1. TÌM KIẾM KANJI
 // @route GET /api/kanji/search?q=一
@@ -196,8 +203,8 @@ export const addKanji = async (
     const newKanji = new Kanji({
       character: body.character.trim(),
       meaning: body.meaning.trim(),
-      onyomi: body.onyomi?.trim() || "",
-      kunyomi: body.kunyomi?.trim() || "",
+      onyomi: safeTrim(body.onyomi),
+      kunyomi: safeTrim(body.kunyomi),
       vietnamese_reading: body.vietnamese_reading.trim(),
       level: body.level.trim().toUpperCase(),
       stroke_order: body.stroke_order || [],
@@ -269,8 +276,8 @@ export const bulkAddKanji = async (
 
         const updateData = {
           meaning: item.meaning.trim(),
-          onyomi: item.onyomi?.trim() || "",
-          kunyomi: item.kunyomi?.trim() || "",
+          onyomi: safeTrim(item.onyomi),
+          kunyomi: safeTrim(item.kunyomi),
           vietnamese_reading: item.vietnamese_reading.trim(),
           level: finalLevel,
           ...(item.components && item.components.length > 0 && { components: item.components }),
@@ -334,8 +341,8 @@ export const updateKanji = async (
       {
         ...(body.character && { character: body.character.trim() }),
         ...(body.meaning && { meaning: body.meaning.trim() }),
-        ...(body.onyomi !== undefined && { onyomi: body.onyomi.trim() }),
-        ...(body.kunyomi !== undefined && { kunyomi: body.kunyomi.trim() }),
+        ...(body.onyomi !== undefined && { onyomi: safeTrim(body.onyomi) }),
+        ...(body.kunyomi !== undefined && { kunyomi: safeTrim(body.kunyomi) }),
         ...(body.vietnamese_reading && { vietnamese_reading: body.vietnamese_reading.trim() }),
         ...(body.level && { level: body.level.trim().toUpperCase() }),
         ...(body.components && { components: body.components }),
