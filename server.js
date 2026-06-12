@@ -8,6 +8,7 @@ import vocabRoute from "./routes/vocab.js";
 import chatbotRoutes from "./routes/chatbot.js";
 // import noteRoutes from "./routes/notes.js"; // Nếu bản V2 vẫn dùng thì mở ra
 import ragRoutes from "./routes/ragRoutes.js";
+import { errorHandler } from "./middleware/errorHandler.js";
 
 import dotenv from "dotenv";
 dotenv.config();
@@ -33,6 +34,9 @@ app.use("/api/vocab", vocabRoute);
 // app.use("/api/notes", noteRoutes);
 app.use("/api/rag", ragRoutes);
 app.use("/api/kanji", kanjiRoutes);
+
+// Global Error Handler Middleware
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
