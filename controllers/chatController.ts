@@ -3,12 +3,14 @@
 import type { Request, Response } from "express";
 import { Pinecone } from "@pinecone-database/pinecone";
 import Groq from "groq-sdk";
+import fs from "fs";
 import VocabList from "../models/VocabList.js"; 
 import StudyLog from "../models/StudyLog.js";
 import Kanji from "../models/Kanji.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { ValidationError, NotFoundError } from "../utils/errors.js";
 import { AuthenticatedRequest } from "../middleware/authMiddleware.js";
+import { generateSmartAudio } from "../utils/audio.js";
 
 // =========================================================================
 // 📦 1. ĐỊNH NGHĨA CÁC INTERFACES MẪU (Gom gọn lên đầu trang quản lý chặt chẽ)
@@ -123,22 +125,54 @@ export const handleChat = asyncHandler(async (
     console.error("⚠️ Lỗi truy vấn Kanji từ MongoDB:", kanjiErr.message);
   }
 
+  // Truy vấn bổ sung Từ vựng từ MongoDB nếu có từ khóa liên quan
+  let vocabContext = "";
+  try {
+    const hasVocabKeywords = /từ vựng|vocab|từ mới|chủ đề|bài|lesson/i.test(lastUserMessage);
+    if (hasVocabKeywords) {
+      const numMatch = lastUserMessage.match(/(?:bài|lesson|chủ đề)\s*(\d+)/i);
+      let matchedVocabList = null;
+      if (numMatch) {
+        const num = numMatch[1];
+        matchedVocabList = await VocabList.findOne({
+          title: new RegExp(`\\b0*${num}\\b|bài\\s*0*${num}\\b`, "i")
+        });
+      }
+      
+      if (matchedVocabList) {
+        const wordsText = (matchedVocabList.words || [])
+          .map((w: any) => `- Từ: ${w.term} | Nghĩa: ${w.def}`)
+          .join("\n");
+        vocabContext = `Từ vựng của bài "${matchedVocabList.title}":\n${wordsText}`;
+      }
+    }
+  } catch (vocabErr: any) {
+    console.error("⚠️ Lỗi truy vấn Vocab từ MongoDB:", vocabErr.message);
+  }
+
   console.log("=== 🌲 [CHAT] KẾT QUẢ PINECONE RAG ===");
   console.log(ragContext || "❌ RỖNG: Không tìm thấy ký ức liên quan, AI dùng kiến thức nền.");
   if (kanjiContext) {
     console.log("=== 💮 [CHAT] KẾT QUẢ MONGO KANJI ===");
     console.log(kanjiContext);
   }
+  if (vocabContext) {
+    console.log("=== 📚 [CHAT] KẾT QUẢ MONGO VOCAB ===");
+    console.log(vocabContext);
+  }
 
   let combinedContext = ragContext;
   if (kanjiContext) {
     combinedContext = (combinedContext ? combinedContext + "\n\n" : "") + "Thông tin chữ Kanji tương thích từ CSDL:\n" + kanjiContext;
   }
+  if (vocabContext) {
+    combinedContext = (combinedContext ? combinedContext + "\n\n" : "") + "Thông tin từ vựng tương thích từ CSDL:\n" + vocabContext;
+  }
 
   const systemPrompt = `Bạn là Sensei dạy tiếng Nhật và kỹ năng BrSE. Hãy trò chuyện bằng tiếng Việt thân thiện, tự nhiên.
   TUYỆT ĐỐI KHÔNG SỬ DỤNG BẤT KỲ BIỂU TƯỢNG CẢM XÚC (EMOJI) NÀO trong câu trả lời của bạn.
   
-  🔥 KIẾN THỨC BẠN ĐÃ LƯU (Dữ liệu RAG):
+  KIẾN THỨC BẠN ĐÃ LƯU (Dữ liệu RAG):
   Sử dụng thông tin dưới đây nếu nó liên quan đến câu hỏi của học viên để giải thích hoặc nhắc lại bài cho họ:
   [${combinedContext || "Không tìm thấy dữ liệu liên quan trực tiếp trong kho lưu trữ."}]`;
 
@@ -158,10 +192,21 @@ export const handleChat = asyncHandler(async (
   const aiReply = response.choices[0]?.message?.content;
   const usage = response.usage; // Lấy thông tin token tiêu thụ thực tế
 
+  // Tạo audio cho câu trả lời của AI
+  let audioSegments: string[] = [];
+  try {
+    if (aiReply) {
+      audioSegments = await generateSmartAudio(aiReply, "google", null);
+    }
+  } catch (audioErr: any) {
+    console.error("⚠️ Lỗi tạo audio TTS cho câu trả lời:", audioErr.message);
+  }
+
   res.status(200).json({
     success: true,
     reply: aiReply,
     usage: usage || null,
+    audioSegments: audioSegments.length > 0 ? audioSegments : undefined,
   });
 });
 
@@ -259,8 +304,41 @@ export const generateQuizByTopic = asyncHandler(async (
  * 🎙️ HÀM 3: Xử lý chuyển đổi giọng nói (Audio Transcribe)
  */
 export const transcribe = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  console.log("Hàm transcribe đang được gọi");
-  res.status(200).json({ success: true, text: "Chức năng ghi âm đang bảo trì sang TS" });
+  console.log("\n=== 🎙️ [TRANSCRIBE] AUDIO UPLOADED ===");
+  if (!req.file) {
+    throw new ValidationError("Không tìm thấy file âm thanh được tải lên.");
+  }
+
+  console.log(`- File path: ${req.file.path}`);
+  console.log(`- File size: ${req.file.size} bytes`);
+
+  try {
+    const transcription = await groq.audio.transcriptions.create({
+      file: fs.createReadStream(req.file.path),
+      model: "whisper-large-v3",
+    });
+
+    const transcribedText = transcription.text || "";
+    console.log(`- Transcribed text: "${transcribedText}"`);
+
+    // Clean up temporary audio file from disk
+    if (fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+      console.log("- Đã dọn dẹp file ghi âm tạm thời.");
+    }
+
+    res.status(200).json({
+      success: true,
+      text: transcribedText,
+    });
+  } catch (error: any) {
+    console.error("❌ Lỗi chuyển đổi giọng nói:", error.message);
+    // Cleanup on error too
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    throw new ValidationError(`Lỗi Whisper AI: ${error.message}`);
+  }
 });
 
 /**

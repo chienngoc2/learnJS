@@ -15,7 +15,7 @@ const seedData = async (): Promise<void> => {
       process.exit(1);
     }
 
-    await mongoose.connect(mongoUri);
+    await mongoose.connect(mongoUri!);
     console.log("🔌 Đã kết nối MongoDB thành công...");
 
     // 2. Làm sạch dữ liệu cũ trong bảng Kanji
