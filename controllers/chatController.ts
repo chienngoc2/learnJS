@@ -5,6 +5,7 @@ import { Pinecone } from "@pinecone-database/pinecone";
 import Groq from "groq-sdk";
 import VocabList from "../models/VocabList.js"; 
 import StudyLog from "../models/StudyLog.js";
+import Kanji from "../models/Kanji.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { ValidationError, NotFoundError } from "../utils/errors.js";
 import { AuthenticatedRequest } from "../middleware/authMiddleware.js";
@@ -87,14 +88,59 @@ export const handleChat = asyncHandler(async (
     console.error("⚠️ Lỗi truy vấn Pinecone ở hàm Chat:", pineconeError.message);
   }
 
+  // Truy vấn bổ sung Kanji từ MongoDB nếu có từ khóa liên quan
+  let kanjiContext = "";
+  try {
+    const hasKanjiKeywords = /kanji|chữ hán|hán tự|hán việt|bài|lesson/i.test(lastUserMessage);
+    if (hasKanjiKeywords) {
+      const numMatch = lastUserMessage.match(/(?:bài|lesson|nhóm)\s*(\d+)/i);
+      let queryConds: any[] = [];
+      if (numMatch) {
+        const num = numMatch[1];
+        // Tìm lessonGroup chứa số này, ví dụ: "Bài 2", "Bài 02"
+        queryConds.push({ lessonGroup: new RegExp(`\\b0*${num}\\b|bài\\s*0*${num}\\b`, "i") });
+      }
+
+      // Tìm các chữ Hán xuất hiện trực tiếp trong câu hỏi
+      const jpCharRegex = /[\u4e00-\u9faf]/g;
+      const chars = lastUserMessage.match(jpCharRegex);
+      if (chars && chars.length > 0) {
+        queryConds.push({ character: { $in: chars } });
+      }
+
+      if (queryConds.length > 0) {
+        const matchedKanjis = await Kanji.find({ $or: queryConds }).limit(30);
+        if (matchedKanjis.length > 0) {
+          kanjiContext = matchedKanjis
+            .map((k) => 
+              `- Chữ: ${k.character} | Hán Việt: ${k.vietnamese_reading} | Nghĩa: ${k.meaning} | JLPT: ${k.level} | Nhóm bài: ${k.lessonGroup || "Chưa xếp"}. Âm ON: ${k.onyomi || "Không"}, Âm KUN: ${k.kunyomi || "Không"}`
+            )
+            .join("\n");
+        }
+      }
+    }
+  } catch (kanjiErr: any) {
+    console.error("⚠️ Lỗi truy vấn Kanji từ MongoDB:", kanjiErr.message);
+  }
+
   console.log("=== 🌲 [CHAT] KẾT QUẢ PINECONE RAG ===");
   console.log(ragContext || "❌ RỖNG: Không tìm thấy ký ức liên quan, AI dùng kiến thức nền.");
+  if (kanjiContext) {
+    console.log("=== 💮 [CHAT] KẾT QUẢ MONGO KANJI ===");
+    console.log(kanjiContext);
+  }
+
+  let combinedContext = ragContext;
+  if (kanjiContext) {
+    combinedContext = (combinedContext ? combinedContext + "\n\n" : "") + "Thông tin chữ Kanji tương thích từ CSDL:\n" + kanjiContext;
+  }
 
   const systemPrompt = `Bạn là Sensei dạy tiếng Nhật và kỹ năng BrSE. Hãy trò chuyện bằng tiếng Việt thân thiện, tự nhiên.
+  TUYỆT ĐỐI KHÔNG SỬ DỤNG BẤT KỲ BIỂU TƯỢNG CẢM XÚC (EMOJI) NÀO trong câu trả lời của bạn.
   
   🔥 KIẾN THỨC BẠN ĐÃ LƯU (Dữ liệu RAG):
   Sử dụng thông tin dưới đây nếu nó liên quan đến câu hỏi của học viên để giải thích hoặc nhắc lại bài cho họ:
-  [${ragContext || "Không tìm thấy dữ liệu liên quan trực tiếp trong kho lưu trữ."}]`;
+  [${combinedContext || "Không tìm thấy dữ liệu liên quan trực tiếp trong kho lưu trữ."}]`;
 
   // Gửi kèm toàn bộ ngữ pháp bổ trợ sang cho LLaMA 3.3 xử lý luận bàn
   const response = await groq.chat.completions.create({

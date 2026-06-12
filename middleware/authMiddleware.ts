@@ -42,7 +42,7 @@ export const protect = asyncHandler(async (
     // Giải mã token
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET as string
+      (process.env.JWT_SECRET || "sensei_ai_secret_key_super_secure") as string
     ) as DecodedToken;
 
     // Tìm user trong database
