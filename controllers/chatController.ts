@@ -4,8 +4,10 @@ import type { Request, Response } from "express";
 import { Pinecone } from "@pinecone-database/pinecone";
 import Groq from "groq-sdk";
 import VocabList from "../models/VocabList.js"; 
+import StudyLog from "../models/StudyLog.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { ValidationError, NotFoundError } from "../utils/errors.js";
+import { AuthenticatedRequest } from "../middleware/authMiddleware.js";
 
 // =========================================================================
 // 📦 1. ĐỊNH NGHĨA CÁC INTERFACES MẪU (Gom gọn lên đầu trang quản lý chặt chẽ)
@@ -55,11 +57,13 @@ export const handleChat = asyncHandler(async (
     throw new ValidationError("Format tin nhắn chat không hợp lệ.");
   }
 
-  // Lấy câu tin nhắn mới nhất của User để mang đi tìm kiếm Vector Space
-  const lastUserMessage = messages[messages.length - 1]?.content || "";
+  // 🛡️ Tối ưu hóa token: Chỉ giữ lại tối đa 10 tin nhắn gần nhất trong lịch sử gửi lên LLM
+  const trimmedMessages = messages.slice(-10);
+  const lastUserMessage = trimmedMessages[trimmedMessages.length - 1]?.content || "";
   
-  console.log("\n=== 💬 [CHAT] REQUEST ĐẾN ===");
+  console.log("\n=== 💬 [CHAT] REQUEST ĐẾN (ĐÃ TỐI ƯU HÓA TOKEN) ===");
   console.log(`- Câu hỏi cuối: "${lastUserMessage}"`);
+  console.log(`- Lịch sử gửi đi: ${trimmedMessages.length} tin nhắn`);
 
   // Truy vấn vào Pinecone để tìm ký ức liên quan (RAG)
   let ragContext = "";
@@ -99,17 +103,19 @@ export const handleChat = asyncHandler(async (
         role: "system",
         content: systemPrompt
       },
-      ...messages
+      ...trimmedMessages
     ],
     model: "llama-3.3-70b-versatile",
     temperature: 0.4, 
   });
 
   const aiReply = response.choices[0]?.message?.content;
+  const usage = response.usage; // Lấy thông tin token tiêu thụ thực tế
 
   res.status(200).json({
     success: true,
     reply: aiReply,
+    usage: usage || null,
   });
 });
 
@@ -279,5 +285,188 @@ export const generateDirectGrammarQuiz = asyncHandler(async (
   res.status(200).json({ 
     success: true, 
     reply: aiReply 
+  });
+});
+
+/**
+ * 💡 HÀM 6: AI Chatbot gợi ý học tập hàng ngày dựa trên lịch sử hôm qua của User
+ * @route GET /api/chat/daily-suggestion
+ */
+export const getDailySuggestion = asyncHandler(async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const authReq = req as AuthenticatedRequest;
+  if (!authReq.user) {
+    throw new UnauthorizedError("Sếp chưa đăng nhập!");
+  }
+
+  const userId = authReq.user._id;
+
+  // 1. Tính toán mốc thời gian "ngày hôm qua" (Yesterday)
+  const today = new Date();
+  const startOfYesterday = new Date(today);
+  startOfYesterday.setDate(today.getDate() - 1);
+  startOfYesterday.setHours(0, 0, 0, 0);
+
+  const endOfYesterday = new Date(today);
+  endOfYesterday.setDate(today.getDate() - 1);
+  endOfYesterday.setHours(23, 59, 59, 999);
+
+  console.log(`🔍 [Suggestion] Tìm log từ ${startOfYesterday.toISOString()} đến ${endOfYesterday.toISOString()} cho user ${authReq.user.username}`);
+
+  // 2. Tìm bài học được xem nhiều nhất ngày hôm qua của User
+  const topLog = await StudyLog.aggregate([
+    {
+      $match: {
+        userId: userId,
+        createdAt: { $gte: startOfYesterday, $lte: endOfYesterday },
+      },
+    },
+    {
+      $group: {
+        _id: "$vocabListId",
+        count: { $sum: 1 },
+      },
+    },
+    {
+      $sort: { count: -1 },
+    },
+    {
+      $limit: 1,
+    },
+  ]);
+
+  let suggestedTopic: any = null;
+  let newTopic: any = null;
+  let oldTopicContext = "Chưa có lịch sử học tập hôm qua.";
+  let selectedQuizItem: any = null;
+
+  // Lấy danh sách tất cả các bài học để làm kho gợi ý
+  const allTopics = await VocabList.find({}).select("title words grammarPoints");
+
+  if (topLog && topLog.length > 0) {
+    const topTopicId = topLog[0]._id;
+    suggestedTopic = allTopics.find((t) => t._id.toString() === topTopicId.toString());
+  }
+
+  // Nếu tìm thấy bài học cũ đã học hôm qua
+  if (suggestedTopic) {
+    console.log(`🔥 [Suggestion] Phát hiện bài học cũ xem nhiều nhất: ${suggestedTopic.title}`);
+    
+    // Tạo context từ vựng/ngữ pháp của bài cũ để AI ra đề
+    const wordsText = (suggestedTopic.words || [])
+      .map((w: any) => `${w.term}: ${w.def}`)
+      .join(", ");
+    
+    const grammarText = (suggestedTopic.grammarPoints || [])
+      .map((g: any) => `Cấu trúc: ${g.title} - Nghĩa: ${g.meaning}`)
+      .join("; ");
+
+    oldTopicContext = `Chủ đề: ${suggestedTopic.title}. Từ vựng: [${wordsText}]. Ngữ pháp: [${grammarText}].`;
+
+    // Chọn ngẫu nhiên 1 từ vựng hoặc 1 cấu trúc ngữ pháp để làm Quiz
+    const hasWords = suggestedTopic.words && suggestedTopic.words.length > 0;
+    const hasGrammar = suggestedTopic.grammarPoints && suggestedTopic.grammarPoints.length > 0;
+
+    if (hasWords && (!hasGrammar || Math.random() > 0.5)) {
+      // Chọn từ vựng
+      const randomWord = suggestedTopic.words[Math.floor(Math.random() * suggestedTopic.words.length)];
+      selectedQuizItem = {
+        type: "vocabulary",
+        term: randomWord.term,
+        def: randomWord.def,
+      };
+    } else if (hasGrammar) {
+      // Chọn ngữ pháp
+      const randomGrammar = suggestedTopic.grammarPoints[Math.floor(Math.random() * suggestedTopic.grammarPoints.length)];
+      selectedQuizItem = {
+        type: "grammar",
+        title: randomGrammar.title,
+        meaning: randomGrammar.meaning,
+        formula: randomGrammar.formula || "",
+      };
+    }
+
+    // Tìm bài học mới gợi ý: Chọn bài học tiếp theo (hoặc bài chưa xem)
+    newTopic = allTopics.find(
+      (t) => t._id.toString() !== suggestedTopic._id.toString()
+    );
+  } else {
+    // Nếu hôm qua không học gì, chọn đại 1 bài học cũ ngẫu nhiên trong DB (nếu có) để nhắc nhở ôn tập
+    console.log("💤 [Suggestion] Hôm qua sếp không học gì. Chọn ngẫu nhiên bài ôn tập...");
+    if (allTopics.length > 0) {
+      suggestedTopic = allTopics[Math.floor(Math.random() * allTopics.length)];
+      
+      const wordsText = (suggestedTopic.words || [])
+        .map((w: any) => `${w.term}: ${w.def}`)
+        .join(", ");
+      oldTopicContext = `Chủ đề: ${suggestedTopic.title}. Từ vựng ôn tập: [${wordsText}].`;
+
+      if (suggestedTopic.words && suggestedTopic.words.length > 0) {
+        const randomWord = suggestedTopic.words[Math.floor(Math.random() * suggestedTopic.words.length)];
+        selectedQuizItem = {
+          type: "vocabulary",
+          term: randomWord.term,
+          def: randomWord.def,
+        };
+      }
+      
+      // Gợi ý bài học mới là một bài khác
+      newTopic = allTopics.find(
+        (t) => t._id.toString() !== suggestedTopic._id.toString()
+      );
+    }
+  }
+
+  // Tên bài học mới gợi ý
+  const newTopicTitle = newTopic ? newTopic.title : "Chưa có bài học mới nào khác";
+
+  // 3. Soạn prompt gửi cho Groq LLaMA sinh lời chào và câu hỏi ôn tập
+  const quizPrompt = selectedQuizItem
+    ? `Hãy tạo 1 câu hỏi ôn tập ngắn gọn từ nội dung cũ: ${
+        selectedQuizItem.type === "vocabulary"
+          ? `Từ vựng: "${selectedQuizItem.term}" (nghĩa: "${selectedQuizItem.def}")`
+          : `Ngữ pháp: "${selectedQuizItem.title}" (ý nghĩa: "${selectedQuizItem.meaning}", công thức: "${selectedQuizItem.formula}")`
+      }`
+    : "Yêu cầu học viên học một bài mới.";
+
+  const systemPrompt = `Bạn là Sensei dạy tiếng Nhật và kỹ năng BrSE.
+  NHIỆM VỤ: Hãy chào học viên bằng Tiếng Việt cực kỳ thân thiện, thông báo bài học hôm qua họ đã xem nhiều nhất (hoặc nhắc nhở nếu hôm qua họ chưa học) và đề xuất:
+  1. Đưa ra một câu hỏi ôn tập (quiz) nhanh dựa trên bài học cũ để kiểm tra HỌC VIÊN.
+  2. Gợi ý họ nghiên cứu bài học mới ngày hôm nay.
+
+  THÔNG TIN HỌC TẬP:
+  - Bài học hôm qua xem nhiều nhất: ${suggestedTopic ? suggestedTopic.title : "Không học gì"}
+  - Chi tiết ôn tập: [${oldTopicContext}]
+  - Bài học mới gợi ý học hôm nay: ${newTopicTitle}
+  - Câu hỏi ôn tập mục tiêu: [${quizPrompt}]
+
+  YÊU CẦU TRẢ LỜI:
+  - Giữ phong cách Sensei vui vẻ, khích lệ học viên, gọi người dùng là "sếp" thân mật.
+  - Đưa câu hỏi trắc nghiệm hoặc dịch thuật ngắn gọn, rõ ràng ở cuối tin nhắn.
+  - KHÔNG trả về định dạng code markdown dư thừa, chỉ trả về chuỗi text bình thường.`;
+
+  const chatCompletion = await groq.chat.completions.create({
+    messages: [
+      {
+        role: "system",
+        content: systemPrompt,
+      },
+    ],
+    model: "llama-3.3-70b-versatile",
+    temperature: 0.7,
+  });
+
+  const aiReply = chatCompletion.choices[0]?.message?.content;
+
+  res.status(200).json({
+    success: true,
+    reply: aiReply,
+    suggestedTopic: suggestedTopic
+      ? { id: suggestedTopic._id, title: suggestedTopic.title }
+      : null,
+    newTopic: newTopic ? { id: newTopic._id, title: newTopic.title } : null,
+    quiz: selectedQuizItem,
   });
 });

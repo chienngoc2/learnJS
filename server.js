@@ -6,6 +6,7 @@ import kanjiRoutes from "./routes/kanji.js";
 // Import Routes
 import vocabRoute from "./routes/vocab.js";
 import chatbotRoutes from "./routes/chatbot.js";
+import authRoutes from "./routes/authRoutes.js";
 // import noteRoutes from "./routes/notes.js"; // Nếu bản V2 vẫn dùng thì mở ra
 import ragRoutes from "./routes/ragRoutes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
@@ -29,6 +30,7 @@ app.use(express.json());
 // app.use(express.static("public")); // Nếu chỉ làm API cho Mobile thì không cần dòng này
 
 // 3. Kết nối Router (Prefix rõ ràng để sau này dễ quản lý)
+app.use("/api/auth", authRoutes);
 app.use("/api/chat", chatbotRoutes);
 app.use("/api/vocab", vocabRoute);
 // app.use("/api/notes", noteRoutes);
