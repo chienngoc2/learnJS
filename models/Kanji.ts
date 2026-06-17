@@ -62,6 +62,11 @@ const KanjiSchema: Schema<IKanji> = new Schema(
   { timestamps: true },
 );
 
+// Thêm indexes tối ưu hiệu suất truy vấn
+KanjiSchema.index({ character: 1, lessonGroup: 1 }, { unique: true });
+KanjiSchema.index({ lessonGroup: 1 });
+KanjiSchema.index({ level: 1 });
+
 // ── Chống lỗi OverwriteModelError khi hot-reload ──
 const Kanji: Model<IKanji> =
   mongoose.models.Kanji || mongoose.model<IKanji>("Kanji", KanjiSchema);

@@ -404,7 +404,10 @@ export const generateDirectGrammarQuiz = asyncHandler(async (
     response_format: { type: "json_object" } 
   });
 
-  const aiReply: string | null = chatCompletion.choices[0]?.message?.content;
+  let aiReply: string | null = chatCompletion.choices[0]?.message?.content;
+  if (aiReply) {
+    aiReply = aiReply.replace(/```json\n|\n```|```/g, "").trim();
+  }
 
   res.status(200).json({ 
     success: true, 

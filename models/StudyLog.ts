@@ -30,6 +30,10 @@ const studyLogSchema = new Schema<IStudyLog>({
   },
 });
 
+// Thêm indexes tối ưu hiệu suất truy vấn
+studyLogSchema.index({ userId: 1, createdAt: -1 });
+studyLogSchema.index({ userId: 1, vocabListId: 1 });
+
 const StudyLog: Model<IStudyLog> =
   mongoose.models.StudyLog || mongoose.model<IStudyLog>("StudyLog", studyLogSchema);
 

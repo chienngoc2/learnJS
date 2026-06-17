@@ -111,6 +111,39 @@ export const logView = asyncHandler(async (req: Request, res: Response): Promise
   });
 });
 
+// Helper để chuẩn hóa danh sách từ vựng đầu vào (tương thích cả {term, def} và {word, meaning...})
+const normalizeWordsList = (list: any[]): any[] => {
+  if (!list || !Array.isArray(list)) return [];
+  return list.map((item: any) => {
+    // Nếu đã đúng định dạng {term, def} của DB
+    if (item.term !== undefined && item.def !== undefined) {
+      return {
+        term: String(item.term),
+        def: typeof item.def === "object" ? JSON.stringify(item.def) : String(item.def),
+        correctCount: item.correctCount !== undefined ? Number(item.correctCount) : 0
+      };
+    }
+    // Định dạng WordDetails từ frontend web/mobile mới
+    if (item.word !== undefined) {
+      return {
+        term: String(item.word),
+        def: JSON.stringify({
+          reading: item.reading || item.word || "",
+          meaning: item.meaning || "",
+          type: item.type || "noun",
+          jlpt: item.jlpt || "N5",
+          examples: item.examples || [],
+          audio: item.audio || "",
+          tags: item.tags || [],
+          notes: item.notes || ""
+        }),
+        correctCount: item.correctCount !== undefined ? Number(item.correctCount) : 0
+      };
+    }
+    return null;
+  }).filter((w: any) => w !== null && w.term);
+};
+
 // @desc    Lưu bài học mới
 // @route   POST /api/vocab/save
 export const createList = asyncHandler(async (
@@ -118,9 +151,18 @@ export const createList = asyncHandler(async (
   res: Response
 ): Promise<void> => {
   const { title, list } = req.body;
+
+  if (!title || !list || !Array.isArray(list)) {
+    throw new ValidationError("Thiếu tiêu đề hoặc danh sách từ vựng!");
+  }
+
+  const normalizedWords = normalizeWordsList(list);
+
+  console.log(`📦 [VocabSave] Lưu bộ "${title}" với ${normalizedWords.length} từ vựng (raw: ${list.length} items)`);
+
   const newList = new VocabList({
     title: title,
-    words: list,
+    words: normalizedWords,
   });
   await newList.save();
   
@@ -140,15 +182,17 @@ export const saveReviewList = asyncHandler(async (
   let existing = await VocabList.findOne({ title: title });
   let targetId = "";
 
+  const normalized = normalizeWordsList(list);
+
   if (existing) {
     const oldWords = (existing.words as any[]).map((w) => w.term);
-    const newUniqueWords = list.filter((w) => !oldWords.includes(w.term));
+    const newUniqueWords = normalized.filter((w) => !oldWords.includes(w.term));
     
     (existing.words as any[]).push(...newUniqueWords);
     await existing.save();
     targetId = existing._id.toString();
   } else {
-    const newList = new VocabList({ title, words: list });
+    const newList = new VocabList({ title, words: normalized });
     await newList.save();
     targetId = newList._id.toString();
   }
@@ -166,9 +210,10 @@ export const updateList = asyncHandler(async (
   res: Response
 ): Promise<void> => {
   const { title, list } = req.body;
+  const normalized = normalizeWordsList(list);
   const updatedList = await VocabList.findByIdAndUpdate(
     req.params.id,
-    { title: title, words: list },
+    { title: title, words: normalized },
     { new: true }
   );
 

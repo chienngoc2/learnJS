@@ -53,6 +53,9 @@ const vocabListSchema = new Schema<IVocabList>({
   createdAt: { type: Date, default: Date.now },
 });
 
+// Thêm index tối ưu hiệu suất truy vấn
+vocabListSchema.index({ title: 1 });
+
 // ==========================================
 // 3. EXPORT MODEL
 // ==========================================
