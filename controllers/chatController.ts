@@ -191,6 +191,9 @@ export const handleChat = asyncHandler(async (
   TUYỆT ĐỐI KHÔNG SỬ DỤNG BẤT KỲ BIỂU TƯỢNG CẢM XÚC (EMOJI) NÀO trong câu trả lời của bạn.
 
   [QUY TẮC BẮT BUỘC - ĐIỀU HƯỚNG TRANG & LUYỆN TẬP (NAVIGATION & PRACTICE)]
+  - Khi người dùng chỉ muốn xem danh sách ngữ pháp hoặc học lý thuyết ngữ pháp tĩnh: Sử dụng tab: "grammar" (Thư viện Ngữ pháp).
+  - Khi người dùng nói muốn "luyện tập ngữ pháp", "chơi game ngữ pháp", "chơi game nối ngữ pháp", "làm bài ngữ pháp", "chơi match ngữ pháp": Bạn BẮT BUỘC phải dẫn họ đến Game ghép câu ngữ pháp (tab: "match", game: "grammar_match") hoặc Tháp ngữ pháp (tab: "match", game: "tower") hoặc Trắc nghiệm ngữ pháp (tab: "quiz", mode: "grammar"). Tuyệt đối KHÔNG sử dụng tab: "grammar" cho việc luyện tập hoặc chơi game.
+  
   Khi người dùng có ý định muốn luyện tập hoặc học tập:
   1. Nếu người dùng chỉ nói muốn luyện tập một cách chung chung (không nêu rõ chế độ nào hoặc không nêu rõ học bài nào):
      - Bạn phải liệt kê các chức năng luyện tập của hệ thống cho họ lựa chọn.
