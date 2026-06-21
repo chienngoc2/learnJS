@@ -169,38 +169,69 @@ export const handleChat = asyncHandler(async (
     combinedContext = (combinedContext ? combinedContext + "\n\n" : "") + "Thông tin từ vựng tương thích từ CSDL:\n" + vocabContext;
   }
 
+  // Query all available VocabLists in MongoDB
+  let vocabListsInfo: Array<{ id: string; title: string; wordCount: number; hasGrammar: boolean }> = [];
+  try {
+    const lists = await VocabList.find({}).select("title words grammarPoints");
+    vocabListsInfo = lists.map((l: any) => ({
+      id: l._id.toString(),
+      title: l.title,
+      wordCount: l.words?.length || 0,
+      hasGrammar: l.grammarPoints && l.grammarPoints.length > 0
+    }));
+  } catch (dbErr: any) {
+    console.error("⚠️ Lỗi truy cập CSDL lấy danh sách bài học:", dbErr.message);
+  }
+
+  const vocabListsPromptText = vocabListsInfo.map(l => 
+    `- "${l.title}" (ID: ${l.id}, từ vựng: ${l.wordCount} từ, có ngữ pháp: ${l.hasGrammar ? "Có" : "Không"})`
+  ).join("\n");
+
   const systemPrompt = `Bạn là Sensei dạy tiếng Nhật và kỹ năng BrSE. Hãy trò chuyện bằng tiếng Việt thân thiện, tự nhiên.
   TUYỆT ĐỐI KHÔNG SỬ DỤNG BẤT KỲ BIỂU TƯỢNG CẢM XÚC (EMOJI) NÀO trong câu trả lời của bạn.
-  
-  KIẾN THỨC BẠN ĐÃ LƯU (Dữ liệu RAG):
+
+  [QUY TẮC BẮT BUỘC - ĐIỀU HƯỚNG TRANG & LUYỆN TẬP (NAVIGATION & PRACTICE)]
+  Khi người dùng có ý định muốn luyện tập hoặc học tập:
+  1. Nếu người dùng chỉ nói muốn luyện tập một cách chung chung (không nêu rõ chế độ nào hoặc không nêu rõ học bài nào):
+     - Bạn phải liệt kê các chức năng luyện tập của hệ thống cho họ lựa chọn.
+     - Đồng thời, gợi ý hoặc hỏi họ muốn luyện tập theo bài/chủ đề nào (dựa trên danh sách các bài học hiện có).
+     - Bạn KHÔNG được tự động chuyển trang ở bước này.
+  2. Nếu người dùng đã chọn được chế độ luyện tập nhưng chưa chọn bài học:
+     - Bạn hãy hỏi người dùng muốn luyện tập theo bài học nào (liệt kê danh sách bài học có sẵn phù hợp với chế độ đó để họ chọn).
+     - Hoặc, nếu người dùng muốn tự chọn bài học trên giao diện, bạn có thể chuyển hướng họ tới trang danh sách tương ứng để họ chọn.
+  3. Nếu người dùng yêu cầu di chuyển, chuyển trang, mở trang, chơi game cụ thể, hoặc bắt đầu một bài học/bài kiểm tra cụ thể (ví dụ: "mở game...", "chuyển sang...", "cho xem...", "vào trang...", "luyện tập bài 1...", v.v.):
+     - Bạn BẮT BUỘC PHẢI viết thêm thẻ điều hướng ở cuối cùng của câu trả lời của bạn theo cú pháp sau (không đổi định dạng):
+       |||{"navigation": {"tab": "<tên_tab>", "game": "<tên_game_nếu_có>", "mode": "<mode_nếu_có>", "listId": "<listId_nếu_có>", "topicTitle": "<topicTitle_nếu_có>"}}|||
+     - Trì hoãn nhẹ sẽ được thực hiện ở phía client.
+
+  [CÁC CHẾ ĐỘ LUYỆN TẬP & DANH SÁCH TAB HỢP LỆ]
+  - tab: "overview" (Tổng quan/Dashboard), "vocab" (Từ vựng), "grammar" (Ngữ pháp), "flashcards" (Thẻ ghi nhớ), "study" (Học tập), "write" (Kanji/Viết chữ), "quiz" (Trắc nghiệm), "match" (Game Center), "statistics" (Thống kê), "settings" (Cài đặt), "achievements" (Thành tựu)
+  - game (chỉ dùng khi tab là "match"):
+    + "hunter" (Meaning Hunter): Game săn nghĩa từ vựng
+    + "missing" (Kanji Missing/Missing Word): Game điền khuyết tự trận pháp
+    + "slash" (Kanji Slash): Game chém chữ Hán
+    + "memory" (Memory Match): Lật thạch bản cổ ngữ
+    + "tower" (Word Tower): Tháp từ vựng ngữ pháp
+    + "grammar_match" (Grammar Match/Linker): Game ghép cặp câu ví dụ ngữ pháp
+  - mode (dùng khi tab là "quiz" để chỉ định chế độ trắc nghiệm):
+    + "vocab" (Trắc nghiệm Từ vựng)
+    + "grammar" (Trắc nghiệm Ngữ pháp)
+  - listId: Điền ID của bài học từ vựng (chọn từ danh sách bài học dưới đây) nếu chế độ được chọn là trắc nghiệm từ vựng, flashcards, study, hoặc các game từ vựng (hunter, missing, slash, memory).
+  - topicTitle: Điền Tiêu đề (Title) của bài học chứa ngữ pháp (chọn từ danh sách bài học dưới đây) nếu chế độ được chọn là trắc nghiệm ngữ pháp hoặc game grammar_match.
+
+  [DANH SÁCH CÁC BÀI HỌC/CHỦ ĐỀ ĐANG CÓ TRONG HỆ THỐNG]
+  ${vocabListsPromptText || "Không có bài học nào đang tồn tại."}
+
+  VÍ DỤ PHẢN HỒI:
+  - Học viên: "Ta muốn luyện tập" -> Trả về: "Chào sếp! Hệ thống của chúng ta có các chế độ luyện tập sau:\n1. Thẻ ghi nhớ (Flashcards)\n2. Tự học từ vựng (Study)\n3. Trắc nghiệm (Quiz) với 2 chế độ: Trắc nghiệm từ vựng & Trắc nghiệm ngữ pháp\n4. Các Trò chơi tại Trận Pháp Điện: Meaning Hunter (Săn nghĩa), Missing Word (Điền từ), Kanji Slash (Chém chữ Kanji), Memory Cultivation (Lật thẻ bài), Word Tower (Tháp từ vựng), và Grammar Match (Ghép câu ngữ pháp).\n\nSếp muốn luyện tập chế độ nào? Và sếp muốn luyện theo bài học nào trong các bài sau: [Liệt kê một vài bài tiêu biểu như Bài 1, Bài 2]?"
+  - Học viên: "Mở game ghép câu ví dụ ngữ pháp bài 1" -> Trả về: "Đã rõ, ta sẽ mở game ghép cặp ví dụ ngữ pháp của bài 1 cho sếp ngay! |||{\"navigation\": {\"tab\": \"match\", \"game\": \"grammar_match\", \"topicTitle\": \"Bài 1\"}}|||"
+  - Học viên: "Vào trắc nghiệm từ vựng bài 2" (Giả sử Bài 2 có ID: "60d5f...") -> Trả về: "Tiên Sư đang chuẩn bị đài thi đấu trắc nghiệm từ vựng Bài 2 cho sếp đây. |||{\"navigation\": {\"tab\": \"quiz\", \"mode\": \"vocab\", \"listId\": \"60d5f...\"}}|||"
+  - Học viên: "Cho ta ôn tập flashcard Bài 1" (Giả sử Bài 1 có ID: "60d5e...") -> Trả về: "Tiên Sư sẽ mở phần thẻ ghi nhớ học tập của Bài 1 cho sếp ngay. |||{\"navigation\": {\"tab\": \"flashcards\", \"listId\": \"60d5e...\"}}|||"
+  - Học viên: "Vào xem bảng cài đặt" -> Trả về: "Tiên Sư đang mở trang cài đặt cho sếp đây. |||{\"navigation\": {\"tab\": \"settings\"}}|||"
+
+  [KIẾN THỨC BẠN ĐÃ LƯU (Dữ liệu RAG)]
   Sử dụng thông tin dưới đây nếu nó liên quan đến câu hỏi của học viên để giải thích hoặc nhắc lại bài cho họ:
-  [${combinedContext || "Không tìm thấy dữ liệu liên quan trực tiếp trong kho lưu trữ."}]
-  
-  ĐIỀU HƯỚNG TRANG (NAVIGATION):
-  Nếu học viên yêu cầu chuyển trang, mở trang, đi tới một tính năng cụ thể (ví dụ: "mở trang luyện tập", "chuyển sang phần viết chữ hán", "cho ta xem thống kê tu vi", "vào cài đặt", v.v.), bạn hãy đính kèm chỉ dẫn điều hướng dạng JSON ở cuối câu trả lời theo đúng định dạng sau:
-  |||{"navigation": {"tab": "<tên_tab>", "game": "<tên_game_nếu_có>"}}|||
-  
-  Các tab hợp lệ gồm:
-  - "overview": Trang chủ, tổng quan, dashboard
-  - "vocab": Từ vựng, danh sách từ vựng, thư viện từ
-  - "grammar": Ngữ pháp, cấu trúc ngữ pháp, thư viện ngữ pháp
-  - "flashcards": Thẻ ghi nhớ, học bằng thẻ, flashcards
-  - "study": Học tập, tự học, study
-  - "write": Luyện viết chữ hán, viết chữ, hán tự, kanji
-  - "quiz": Đài thi đấu trắc nghiệm, thi đấu, làm bài quiz, bài test trắc nghiệm
-  - "match": Trận Pháp Điện (Game Center). Nếu họ muốn chơi game cụ thể, hãy điền thêm trường "game" tương ứng:
-    + "hunter": Meaning Hunter (Săn nghĩa từ vựng)
-    + "missing": Missing Word Challenge (Điền từ vào ví dụ)
-    + "slash": Kanji Slash (Chém chữ Hán)
-    + "memory": Memory Cultivation (Lật thẻ nhớ từ vựng)
-    + "tower": Grammar Trial Tower (Tháp ngữ pháp)
-    + "grammar_match": Grammar Match (Ghép cặp ví dụ ngữ pháp)
-  - "statistics": Thống kê tu vi, thống kê học tập
-  - "settings": Cài đặt, chỉnh cấu hình
-  - "achievements": Thành tựu, danh hiệu, thành quả tu luyện
-  
-  Ví dụ: "Mở game ghép câu ví dụ" -> "... |||{"navigation": {"tab": "match", "game": "grammar_match"}}|||"
-  Ví dụ: "Vào xem bảng cài đặt" -> "... |||{"navigation": {"tab": "settings"}}|||"`;
+  [${combinedContext || "Không tìm thấy dữ liệu liên quan trực tiếp trong kho lưu trữ."}]`;
 
   // Gửi kèm toàn bộ ngữ pháp bổ trợ sang cho LLaMA 3.3 xử lý luận bàn
   const response = await groq.chat.completions.create({
@@ -212,11 +243,14 @@ export const handleChat = asyncHandler(async (
       ...trimmedMessages
     ],
     model: "llama-3.3-70b-versatile",
-    temperature: 0.4, 
+    temperature: 0.2, // Lower temperature to follow instructions strictly
   });
 
   const aiReply = response.choices[0]?.message?.content || "";
   const usage = response.usage; // Lấy thông tin token tiêu thụ thực tế
+
+  console.log("\n=== 🤖 [AI] RAW REPLY FROM LLM ===");
+  console.log(aiReply);
 
   // Định nghĩa Regex để bóc tách thông tin điều hướng từ phản hồi của LLM
   let reply = aiReply;
@@ -232,6 +266,11 @@ export const handleChat = asyncHandler(async (
       console.error("Lỗi parse JSON navigation từ LLM:", e);
     }
   }
+
+  console.log("=== 🧩 [AI] PARSED NAVIGATION RESULT ===");
+  console.log(navigation);
+  console.log("=== 💬 [AI] CLEAN REPLY TO CLIENT ===");
+  console.log(reply);
 
   // Tạo audio cho câu trả lời của AI
   let audioSegments: string[] = [];
