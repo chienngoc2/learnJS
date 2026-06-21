@@ -117,27 +117,52 @@ const normalizeWordsList = (list: any[]): any[] => {
   return list.map((item: any) => {
     // Nếu đã đúng định dạng {term, def} của DB
     if (item.term !== undefined && item.def !== undefined) {
+      let extra: any = {};
+      try {
+        const trimmed = String(item.def).trim();
+        if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+          extra = JSON.parse(trimmed);
+        }
+      } catch (e) {}
+
       return {
         term: String(item.term),
         def: typeof item.def === "object" ? JSON.stringify(item.def) : String(item.def),
-        correctCount: item.correctCount !== undefined ? Number(item.correctCount) : 0
+        correctCount: item.correctCount !== undefined ? Number(item.correctCount) : 0,
+        reading: item.reading || extra.reading,
+        meaning: item.meaning || extra.meaning,
+        type: item.type || extra.type,
+        jlpt: item.jlpt || extra.jlpt,
+        examples: item.examples || extra.examples,
+        audio: item.audio || extra.audio,
+        tags: item.tags || extra.tags,
+        notes: item.notes || extra.notes
       };
     }
     // Định dạng WordDetails từ frontend web/mobile mới
     if (item.word !== undefined) {
+      const defObj = {
+        reading: item.reading || item.word || "",
+        meaning: item.meaning || "",
+        type: item.type || "noun",
+        jlpt: item.jlpt || "N5",
+        examples: item.examples || [],
+        audio: item.audio || "",
+        tags: item.tags || [],
+        notes: item.notes || ""
+      };
       return {
         term: String(item.word),
-        def: JSON.stringify({
-          reading: item.reading || item.word || "",
-          meaning: item.meaning || "",
-          type: item.type || "noun",
-          jlpt: item.jlpt || "N5",
-          examples: item.examples || [],
-          audio: item.audio || "",
-          tags: item.tags || [],
-          notes: item.notes || ""
-        }),
-        correctCount: item.correctCount !== undefined ? Number(item.correctCount) : 0
+        def: JSON.stringify(defObj),
+        correctCount: item.correctCount !== undefined ? Number(item.correctCount) : 0,
+        reading: defObj.reading,
+        meaning: defObj.meaning,
+        type: defObj.type,
+        jlpt: defObj.jlpt,
+        examples: defObj.examples,
+        audio: defObj.audio,
+        tags: defObj.tags,
+        notes: defObj.notes
       };
     }
     return null;

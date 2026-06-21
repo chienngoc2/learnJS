@@ -8,7 +8,15 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 export interface IWord {
   term: string;
   def: string;
-  correctCount?: number; 
+  correctCount?: number;
+  reading?: string;
+  meaning?: string;
+  type?: string;
+  jlpt?: string;
+  examples?: Array<{ jp: string; vn: string }>;
+  audio?: string;
+  tags?: string[];
+  notes?: string;
 }
 
 export interface IGrammarPoint {
@@ -36,7 +44,15 @@ const vocabListSchema = new Schema<IVocabList>({
     {
       term: { type: String, required: true },
       def: { type: String, required: true },
-      correctCount: { type: Number, default: 0 } 
+      correctCount: { type: Number, default: 0 },
+      reading: { type: String },
+      meaning: { type: String },
+      type: { type: String },
+      jlpt: { type: String },
+      examples: { type: [Schema.Types.Mixed], default: undefined },
+      audio: { type: String },
+      tags: { type: [String] },
+      notes: { type: String }
     },
   ],
 

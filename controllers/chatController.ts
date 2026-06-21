@@ -174,7 +174,33 @@ export const handleChat = asyncHandler(async (
   
   KIẾN THỨC BẠN ĐÃ LƯU (Dữ liệu RAG):
   Sử dụng thông tin dưới đây nếu nó liên quan đến câu hỏi của học viên để giải thích hoặc nhắc lại bài cho họ:
-  [${combinedContext || "Không tìm thấy dữ liệu liên quan trực tiếp trong kho lưu trữ."}]`;
+  [${combinedContext || "Không tìm thấy dữ liệu liên quan trực tiếp trong kho lưu trữ."}]
+  
+  ĐIỀU HƯỚNG TRANG (NAVIGATION):
+  Nếu học viên yêu cầu chuyển trang, mở trang, đi tới một tính năng cụ thể (ví dụ: "mở trang luyện tập", "chuyển sang phần viết chữ hán", "cho ta xem thống kê tu vi", "vào cài đặt", v.v.), bạn hãy đính kèm chỉ dẫn điều hướng dạng JSON ở cuối câu trả lời theo đúng định dạng sau:
+  |||{"navigation": {"tab": "<tên_tab>", "game": "<tên_game_nếu_có>"}}|||
+  
+  Các tab hợp lệ gồm:
+  - "overview": Trang chủ, tổng quan, dashboard
+  - "vocab": Từ vựng, danh sách từ vựng, thư viện từ
+  - "grammar": Ngữ pháp, cấu trúc ngữ pháp, thư viện ngữ pháp
+  - "flashcards": Thẻ ghi nhớ, học bằng thẻ, flashcards
+  - "study": Học tập, tự học, study
+  - "write": Luyện viết chữ hán, viết chữ, hán tự, kanji
+  - "quiz": Đài thi đấu trắc nghiệm, thi đấu, làm bài quiz, bài test trắc nghiệm
+  - "match": Trận Pháp Điện (Game Center). Nếu họ muốn chơi game cụ thể, hãy điền thêm trường "game" tương ứng:
+    + "hunter": Meaning Hunter (Săn nghĩa từ vựng)
+    + "missing": Missing Word Challenge (Điền từ vào ví dụ)
+    + "slash": Kanji Slash (Chém chữ Hán)
+    + "memory": Memory Cultivation (Lật thẻ nhớ từ vựng)
+    + "tower": Grammar Trial Tower (Tháp ngữ pháp)
+    + "grammar_match": Grammar Match (Ghép cặp ví dụ ngữ pháp)
+  - "statistics": Thống kê tu vi, thống kê học tập
+  - "settings": Cài đặt, chỉnh cấu hình
+  - "achievements": Thành tựu, danh hiệu, thành quả tu luyện
+  
+  Ví dụ: "Mở game ghép câu ví dụ" -> "... |||{"navigation": {"tab": "match", "game": "grammar_match"}}|||"
+  Ví dụ: "Vào xem bảng cài đặt" -> "... |||{"navigation": {"tab": "settings"}}|||"`;
 
   // Gửi kèm toàn bộ ngữ pháp bổ trợ sang cho LLaMA 3.3 xử lý luận bàn
   const response = await groq.chat.completions.create({
@@ -189,14 +215,29 @@ export const handleChat = asyncHandler(async (
     temperature: 0.4, 
   });
 
-  const aiReply = response.choices[0]?.message?.content;
+  const aiReply = response.choices[0]?.message?.content || "";
   const usage = response.usage; // Lấy thông tin token tiêu thụ thực tế
+
+  // Định nghĩa Regex để bóc tách thông tin điều hướng từ phản hồi của LLM
+  let reply = aiReply;
+  let navigation = null;
+  const navRegex = /\|\|\|([\s\S]*?)\|\|\|/;
+  const navMatch = aiReply.match(navRegex);
+  if (navMatch) {
+    try {
+      const navData = JSON.parse(navMatch[1].trim());
+      reply = aiReply.replace(navRegex, '').trim();
+      navigation = navData.navigation;
+    } catch (e) {
+      console.error("Lỗi parse JSON navigation từ LLM:", e);
+    }
+  }
 
   // Tạo audio cho câu trả lời của AI
   let audioSegments: string[] = [];
   try {
-    if (aiReply) {
-      audioSegments = await generateSmartAudio(aiReply, "google", null);
+    if (reply) {
+      audioSegments = await generateSmartAudio(reply, "google", null);
     }
   } catch (audioErr: any) {
     console.error("⚠️ Lỗi tạo audio TTS cho câu trả lời:", audioErr.message);
@@ -204,7 +245,8 @@ export const handleChat = asyncHandler(async (
 
   res.status(200).json({
     success: true,
-    reply: aiReply,
+    reply: reply,
+    navigation: navigation,
     usage: usage || null,
     audioSegments: audioSegments.length > 0 ? audioSegments : undefined,
   });
