@@ -257,6 +257,23 @@ export const addOrUpdateGrammar = asyncHandler(async (
 
   const cleanTopicName = topicName.trim();
 
+  // Chuẩn hóa grammarPoints để đảm bảo examples luôn là mảng chuỗi và topicName được điền đầy đủ
+  const normalizedGrammarPoints = grammarPoints.map((gp: any) => ({
+    title: gp.title,
+    formula: gp.formula || "",
+    meaning: gp.meaning,
+    examples: Array.isArray(gp.examples)
+      ? gp.examples.map((ex: any) => {
+          if (typeof ex === "string") return ex;
+          if (ex && typeof ex === "object") {
+            return `${ex.jp || ""} : ${ex.vn || ""}`;
+          }
+          return String(ex);
+        })
+      : [],
+    topicName: gp.topicName || cleanTopicName
+  }));
+
   // 1. Tìm xem bài học đã tồn tại chưa
   const existingList = await VocabList.findOne({ title: cleanTopicName });
 
@@ -264,7 +281,7 @@ export const addOrUpdateGrammar = asyncHandler(async (
     // TRƯỜNG HỢP 1: Tồn tại -> Chỉ cần Push thêm vào mảng cũ
     await VocabList.updateOne(
       { _id: existingList._id },
-      { $push: { grammarPoints: { $each: grammarPoints } } }
+      { $push: { grammarPoints: { $each: normalizedGrammarPoints } } }
     );
     
     // Tự động đồng bộ Pinecone
@@ -278,7 +295,7 @@ export const addOrUpdateGrammar = asyncHandler(async (
     // TRƯỜNG HỢP 2: Chưa tồn tại -> Tạo mới hoàn toàn
     const newList = new VocabList({
       title: cleanTopicName,
-      grammarPoints: grammarPoints,
+      grammarPoints: normalizedGrammarPoints,
       words: [] // Khởi tạo mảng trống để không vi phạm Schema (nếu có yêu cầu)
     });
     
@@ -306,6 +323,17 @@ export const updateSingleGrammar = asyncHandler(async (req: Request, res: Respon
     throw new ValidationError(`ID bài học hoặc ID ngữ pháp sai định dạng ObjectId sếp ơi! Nhận được: topicId=${topicId}, grammarId=${grammarId}`);
   }
 
+  // Chuẩn hóa examples sang mảng chuỗi
+  const normalizedExamples = Array.isArray(examples)
+    ? examples.map((ex: any) => {
+        if (typeof ex === "string") return ex;
+        if (ex && typeof ex === "object") {
+          return `${ex.jp || ""} : ${ex.vn || ""}`;
+        }
+        return String(ex);
+      })
+    : [];
+
   // Định vị chuẩn xác bài học lớn và vị trí index của object con trong mảng bằng toán tử "$"
   const result = await VocabList.findOneAndUpdate(
     { 
@@ -317,7 +345,7 @@ export const updateSingleGrammar = asyncHandler(async (req: Request, res: Respon
         "grammarPoints.$.title": title,
         "grammarPoints.$.formula": formula,
         "grammarPoints.$.meaning": meaning,
-        "grammarPoints.$.examples": examples, // 🚀 ĐÃ FIX LOGIC MỚI: Lưu mảng chuỗi examples đồng bộ với FE
+        "grammarPoints.$.examples": normalizedExamples, // 🚀 ĐÃ FIX LOGIC MỚI: Lưu mảng chuỗi examples đồng bộ với FE
         "grammarPoints.$.topicName": topicName
       }
     },
