@@ -13,7 +13,7 @@ const generateToken = (id: string, role: string): string => {
     { id, role },
     (process.env.JWT_SECRET || "sensei_ai_secret_key_super_secure") as string,
     {
-      expiresIn: (process.env.JWT_EXPIRE || "30d") as string,
+      expiresIn: (process.env.JWT_EXPIRE || "30d") as any,
     }
   );
 };
