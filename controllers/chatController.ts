@@ -60,210 +60,122 @@ export const handleChat = asyncHandler(async (
     throw new ValidationError("Format tin nhắn chat không hợp lệ.");
   }
 
-  // 🛡️ Tối ưu hóa token: Chỉ giữ lại tối đa 10 tin nhắn gần nhất trong lịch sử gửi lên LLM
-  const trimmedMessages = messages.slice(-10);
+  // Giữ tối đa 4 tin nhắn gần nhất
+  const trimmedMessages = messages.slice(-4);
   const lastUserMessage = trimmedMessages[trimmedMessages.length - 1]?.content || "";
-  
-  console.log("\n=== 💬 [CHAT] REQUEST ĐẾN (ĐÃ TỐI ƯU HÓA TOKEN) ===");
-  console.log(`- Câu hỏi cuối: "${lastUserMessage}"`);
-  console.log(`- Lịch sử gửi đi: ${trimmedMessages.length} tin nhắn`);
 
-  // Truy vấn vào Pinecone để tìm ký ức liên quan (RAG)
+  // Nén lịch sử: chỉ giữ 120 ký tự đầu của các tin nhắn assistant cũ (giảm bồng to context)
+  const compressedMessages = trimmedMessages.map((m, i) => {
+    const isLastUser = i === trimmedMessages.length - 1;
+    if (!isLastUser && m.role === "assistant" && m.content.length > 120) {
+      return { ...m, content: m.content.substring(0, 120) + "..." };
+    }
+    return m;
+  });
+
+  console.log("[CHAT] Q:", lastUserMessage.substring(0, 80));
+
+  // RAG Pinecone — topK=3 lấy đủ ngữ cảnh, ít token hơn
   let ragContext = "";
   try {
     const index = pc.index(process.env.PINECONE_INDEX_NAME as string);
-    
     const searchResults = await index.searchRecords({
-      query: {
-        inputs: { text: lastUserMessage },
-        topK: 10,
-      },
+      query: { inputs: { text: lastUserMessage }, topK: 3 },
       fields: ["text"],
     });
-
-    if (searchResults.result?.hits && searchResults.result.hits.length > 0) {
+    if (searchResults.result?.hits?.length > 0) {
       ragContext = searchResults.result.hits
-        .map((hit: any) => hit.fields.text)
+        .map((h: any) => (h.fields.text as string).substring(0, 300)) // cap 300 chars/hit
         .join("\n");
     }
-  } catch (pineconeError: any) {
-    console.error("⚠️ Lỗi truy vấn Pinecone ở hàm Chat:", pineconeError.message);
+  } catch (e: any) {
+    console.error("[Pinecone]", e.message);
   }
 
-  // Truy vấn bổ sung Kanji từ MongoDB nếu có từ khóa liên quan
+  // === CONDITIONAL CONTEXT INJECTION (cost-latency-optimizer) ===
+  // Chỉ truy vấn DB khi câu hỏi thực sự liên quan → tiết kiệm token + latency
+
+  // 1. Kanji — chỉ khi có từ khóa kanji/hán rõ ràng (không phải chỉ vì "bài")
   let kanjiContext = "";
-  try {
-    const hasKanjiKeywords = /kanji|chữ hán|hán tự|hán việt|bài|lesson/i.test(lastUserMessage);
-    if (hasKanjiKeywords) {
+  const hasKanjiKeywords = /kanji|chữ hán|hán tự|hán việt/i.test(lastUserMessage);
+  if (hasKanjiKeywords) {
+    try {
       const numMatch = lastUserMessage.match(/(?:bài|lesson|nhóm)\s*(\d+)/i);
-      let queryConds: any[] = [];
-      if (numMatch) {
-        const num = numMatch[1];
-        // Tìm lessonGroup chứa số này, ví dụ: "Bài 2", "Bài 02"
-        queryConds.push({ lessonGroup: new RegExp(`\\b0*${num}\\b|bài\\s*0*${num}\\b`, "i") });
-      }
-
-      // Tìm các chữ Hán xuất hiện trực tiếp trong câu hỏi
-      const jpCharRegex = /[\u4e00-\u9faf]/g;
-      const chars = lastUserMessage.match(jpCharRegex);
-      if (chars && chars.length > 0) {
-        queryConds.push({ character: { $in: chars } });
-      }
-
+      const jpChars = lastUserMessage.match(/[\u4e00-\u9faf]/g);
+      const queryConds: any[] = [];
+      if (numMatch) queryConds.push({ lessonGroup: new RegExp(`\\b0*${numMatch[1]}\\b|bài\\s*0*${numMatch[1]}\\b`, "i") });
+      if (jpChars?.length) queryConds.push({ character: { $in: jpChars } });
       if (queryConds.length > 0) {
-        const matchedKanjis = await Kanji.find({ $or: queryConds }).limit(30);
-        if (matchedKanjis.length > 0) {
-          kanjiContext = matchedKanjis
-            .map((k) => 
-              `- Chữ: ${k.character} | Hán Việt: ${k.vietnamese_reading} | Nghĩa: ${k.meaning} | JLPT: ${k.level} | Nhóm bài: ${k.lessonGroup || "Chưa xếp"}. Âm ON: ${k.onyomi || "Không"}, Âm KUN: ${k.kunyomi || "Không"}`
-            )
-            .join("\n");
-        }
+        const kanjis = await Kanji.find({ $or: queryConds }).limit(15);
+        if (kanjis.length > 0)
+          kanjiContext = kanjis.map((k) =>
+            `${k.character}(${k.vietnamese_reading}):${k.meaning}|${k.level}|ON:${k.onyomi || "-"}|KUN:${k.kunyomi || "-"}`
+          ).join("\n");
       }
-    }
-  } catch (kanjiErr: any) {
-    console.error("⚠️ Lỗi truy vấn Kanji từ MongoDB:", kanjiErr.message);
+    } catch (e: any) { console.error("[Kanji]", e.message); }
   }
 
-  // Truy vấn bổ sung Từ vựng từ MongoDB nếu có từ khóa liên quan
+  // 2. Vocab — chỉ khi hỏi từ vựng bài cụ thể (có số bài)
   let vocabContext = "";
-  try {
-    const hasVocabKeywords = /từ vựng|vocab|từ mới|chủ đề|bài|lesson/i.test(lastUserMessage);
-    if (hasVocabKeywords) {
-      const numMatch = lastUserMessage.match(/(?:bài|lesson|chủ đề)\s*(\d+)/i);
-      let matchedVocabList = null;
-      if (numMatch) {
-        const num = numMatch[1];
-        matchedVocabList = await VocabList.findOne({
-          title: new RegExp(`\\b0*${num}\\b|bài\\s*0*${num}\\b`, "i")
-        });
-      }
-      
-      if (matchedVocabList) {
-        const wordsText = (matchedVocabList.words || [])
-          .map((w: any) => `- Từ: ${w.term} | Nghĩa: ${w.def}`)
-          .join("\n");
-        vocabContext = `Từ vựng của bài "${matchedVocabList.title}":\n${wordsText}`;
-      }
-    }
-  } catch (vocabErr: any) {
-    console.error("⚠️ Lỗi truy vấn Vocab từ MongoDB:", vocabErr.message);
+  const vocabNumMatch = lastUserMessage.match(/(?:từ vựng|vocab|từ mới|bài|lesson).*?(\d+)/i);
+  if (vocabNumMatch) {
+    try {
+      const matched = await VocabList.findOne({
+        title: new RegExp(`\\b0*${vocabNumMatch[1]}\\b|bài\\s*0*${vocabNumMatch[1]}\\b`, "i")
+      }).select("title words").lean() as any;
+      if (matched)
+        vocabContext = `Bài "${matched.title}": ` +
+          (matched.words || []).slice(0, 20).map((w: any) => `${w.term}:${w.def}`).join(" | ");
+    } catch (e: any) { console.error("[Vocab]", e.message); }
   }
 
-  console.log("=== 🌲 [CHAT] KẾT QUẢ PINECONE RAG ===");
-  console.log(ragContext || "❌ RỖNG: Không tìm thấy ký ức liên quan, AI dùng kiến thức nền.");
-  if (kanjiContext) {
-    console.log("=== 💮 [CHAT] KẾT QUẢ MONGO KANJI ===");
-    console.log(kanjiContext);
-  }
-  if (vocabContext) {
-    console.log("=== 📚 [CHAT] KẾT QUẢ MONGO VOCAB ===");
-    console.log(vocabContext);
-  }
-
-  let combinedContext = ragContext;
-  if (kanjiContext) {
-    combinedContext = (combinedContext ? combinedContext + "\n\n" : "") + "Thông tin chữ Kanji tương thích từ CSDL:\n" + kanjiContext;
-  }
-  if (vocabContext) {
-    combinedContext = (combinedContext ? combinedContext + "\n\n" : "") + "Thông tin từ vựng tương thích từ CSDL:\n" + vocabContext;
+  // 3. Danh sách bài học — chỉ load khi user có intent luyện tập/chuyển trang
+  const hasPracticeIntent = /luyện tập|game|quiz|flashcard|chuyển|mở|vào|chơi|xem|tập|thêm|tạo|học/i.test(lastUserMessage);
+  let vocabListsPromptText = "";
+  let grammarListsPromptText = "";
+  if (hasPracticeIntent) {
+    try {
+      const lists = await VocabList.find({}).select("title grammarPoints").lean() as any[];
+      const allLists = lists.map((l: any) => ({
+        id: l._id.toString(),
+        title: l.title,
+        hasGrammar: !!(l.grammarPoints?.length)
+      }));
+      vocabListsPromptText = allLists.map(l => `${l.title}(${l.id})${l.hasGrammar ? "[GP]" : ""}`).join(", ");
+      grammarListsPromptText = allLists.filter(l => l.hasGrammar).map(l => `${l.title}(${l.id})`).join(", ");
+    } catch (e: any) { console.error("[VocabList]", e.message); }
   }
 
-  // Query all available VocabLists in MongoDB
-  let vocabListsInfo: Array<{ id: string; title: string; wordCount: number; hasGrammar: boolean }> = [];
-  try {
-    const lists = await VocabList.find({}).select("title words grammarPoints");
-    vocabListsInfo = lists.map((l: any) => ({
-      id: l._id.toString(),
-      title: l.title,
-      wordCount: l.words?.length || 0,
-      hasGrammar: l.grammarPoints && l.grammarPoints.length > 0
-    }));
-  } catch (dbErr: any) {
-    console.error("⚠️ Lỗi truy cập CSDL lấy danh sách bài học:", dbErr.message);
-  }
+  // Ghép combined context
+  const contextParts: string[] = [];
+  if (ragContext) contextParts.push(ragContext);
+  if (kanjiContext) contextParts.push("KANJI:\n" + kanjiContext);
+  if (vocabContext) contextParts.push("TỪ VỰNG:\n" + vocabContext);
+  const combinedContext = contextParts.join("\n\n");
 
-  const vocabListsPromptText = vocabListsInfo.map(l =>
-    `- "${l.title}" (ID: ${l.id}, từ vựng: ${l.wordCount} từ, có ngữ pháp: ${l.hasGrammar ? "Có" : "Không"})`
-  ).join("\n");
+  // Chỉ inject NAV_RULES khi user có intent điều hướng/luyện tập
+  const navSection = hasPracticeIntent ? `
+NAV FORMAT (cuối reply): |||{"navigation":{"tab":"X",...}}|||
+TABS: add-grammar,grammar-viewer,add-vocab,vocab,grammar,flashcards,study,quiz,match,write,overview,settings,statistics
+GAMES(tab=match): grammar_match,vocab_match,missing,slash,memory,tower,hunter
+MODES(tab=quiz): vocab,grammar
+PHẢI tự navigate. Ví dụ: "thêm ngữ pháp"->|||{"navigation":{"tab":"add-grammar"}}||| | "nối ngữ pháp"->|||{"navigation":{"tab":"match","game":"grammar_match"}}|||` : "";
 
-  // Build a separate grammar-only list for clearer context
-  const grammarListsPromptText = vocabListsInfo
-    .filter(l => l.hasGrammar)
-    .map(l => `- "${l.title}" (ID: ${l.id})`)
-    .join("\n");
+  const practiceSection = hasPracticeIntent && vocabListsPromptText
+    ? `\nBÀI HỌC: ${vocabListsPromptText}${grammarListsPromptText ? "\nNGỦ PHÁP: " + grammarListsPromptText : ""}`
+    : "";
 
-  const systemPrompt = `Bạn là Sensei dạy tiếng Nhật và kỹ năng BrSE. Hãy trò chuyện bằng tiếng Việt thân thiện, tự nhiên.
-  TUYỆT ĐỐI KHÔNG SỬ DỤNG BẤT KỲ BIỂU TƯỢNG CẢM XÚC (EMOJI) NÀO trong câu trả lời của bạn.
+  const systemPrompt = `Sensei dạy tiếng Nhật/BrSE. Tiếng Việt, gọi user là "sếp". Không dùng emoji.${navSection}${practiceSection}${combinedContext ? "\nKIẾN THỨC:[" + combinedContext + "]" : ""}`;
 
-  [QUY TẮC BẮT BUỘC VỀ ĐIỀU HƯỚNG - ĐỌC KỸ TRƯỚC KHI TRẢ LỜI]
-  QUAN TRỌNG: Bất cứ khi nào người dùng yêu cầu chuyển trang, mở trang, hoặc đến một chức năng cụ thể, bạn PHẢI:
-  1. Trả lời ngắn gọn xác nhận hành động.
-  2. LUÔN LUÔN thêm thẻ điều hướng ở CUỐI câu trả lời theo đúng cú pháp: |||{"navigation": {...}}|||
-  KHÔNG được chỉ hướng dẫn bằng lời. KHÔNG được nói "bạn có thể truy cập vào tab...". PHẢI tự chuyển trang.
 
-  [CÁC TRANG VÀ TAB HỢP LỆ]
-  Ánh xạ yêu cầu -> thẻ điều hướng:
-  - "Thêm ngữ pháp" / "Tạo ngữ pháp" / "Add grammar": tab = "add-grammar"
-  - "Xem thư viện ngữ pháp" / "Danh sách ngữ pháp": tab = "grammar-viewer"
-  - "Game ghép ngữ pháp" / "Nối ngữ pháp" / "Match ngữ pháp" / "Luyện tập ngữ pháp": tab = "match", game = "grammar_match"
-  - "Xem/Học từ vựng": tab = "vocab"
-  - "Thêm từ vựng" / "Add vocab": tab = "add-vocab"
-  - "Flashcard" / "Thẻ ghi nhớ": tab = "flashcards", kèm listId nếu có
-  - "Tự học" / "Study": tab = "study", kèm listId nếu có
-  - "Trắc nghiệm từ vựng" / "Quiz từ vựng": tab = "quiz", mode = "vocab", kèm listId nếu có
-  - "Trắc nghiệm ngữ pháp" / "Quiz ngữ pháp": tab = "quiz", mode = "grammar"
-  - "Trang chủ" / "Overview": tab = "overview"
-  - "Cài đặt" / "Settings": tab = "settings"
-  - "Hồ sơ" / "Thành tựu" / "Thống kê": tab = "statistics"
-  - "Kanji" / "Viết chữ": tab = "write"
-  - "Game ghép từ vựng" / "Vocab match": tab = "match", game = "vocab_match"
-  - "Game điền từ" / "Missing word": tab = "match", game = "missing"
-  - "Game chém Kanji" / "Kanji slash": tab = "match", game = "slash"
-  - "Game lật thẻ" / "Memory match": tab = "match", game = "memory"
-  - "Tháp từ vựng" / "Word tower": tab = "match", game = "tower"
-  - "Game săn nghĩa" / "Meaning hunter": tab = "match", game = "hunter"
-
-  Cú pháp thẻ điều hướng (KHÔNG thay đổi định dạng):
-  |||{"navigation": {"tab": "<tab>", "game": "<game_nếu_có>", "mode": "<mode_nếu_có>", "listId": "<id_nếu_có>", "topicTitle": "<title_nếu_có>"}}|||
-
-  [HƯỚNG DẪN KHI NGƯỜI DÙNG MUỐN LUYỆN TẬP]
-  1. Nếu người dùng chỉ nói muốn luyện tập chung chung: Liệt kê các chức năng, hỏi họ muốn chế độ nào và bài nào. CHƯA chuyển trang.
-  2. Nếu người dùng đã chọn chế độ nhưng chưa chọn bài: Hỏi bài học (liệt kê danh sách bài học phù hợp). CHƯA chuyển trang.
-  3. Nếu người dùng yêu cầu một hành động cụ thể (mở, chuyển, vào, chơi, xem): PHẢI thêm thẻ điều hướng.
-
-  [DANH SÁCH TẤT CẢ BÀI HỌC TRONG HỆ THỐNG]
-  ${vocabListsPromptText || "Chưa có bài học nào."}
-
-  [BÀI HỌC CÓ CHỨA NGỮ PHÁP (dùng cho game grammar_match và quiz grammar)]
-  ${grammarListsPromptText || "Chưa có bài học nào có ngữ pháp."}
-
-  VÍ DỤ PHẢN HỒI ĐÚNG:
-  - Học viên: "Chuyển sang trang thêm ngữ pháp" -> "Đang mở trang thêm ngữ pháp cho sếp ngay. |||{\"navigation\": {\"tab\": \"add-grammar\"}}|||"
-  - Học viên: "Cho xem thư viện ngữ pháp" -> "Đang mở thư viện ngữ pháp cho sếp ngay. |||{\"navigation\": {\"tab\": \"grammar-viewer\"}}|||"
-  - Học viên: "Chuyển trang nối ngữ pháp" -> "Đang mở game ghép ngữ pháp cho sếp ngay. |||{\"navigation\": {\"tab\": \"match\", \"game\": \"grammar_match\"}}|||"
-  - Học viên: "Mở game ghép câu ví dụ ngữ pháp bài 1" -> "Đang mở game ghép ngữ pháp bài 1 cho sếp ngay. |||{\"navigation\": {\"tab\": \"match\", \"game\": \"grammar_match\", \"topicTitle\": \"Bài 1\"}}|||"
-  - Học viên: "Vào trắc nghiệm từ vựng bài 2" -> "Đang chuẩn bị trắc nghiệm từ vựng Bài 2. |||{\"navigation\": {\"tab\": \"quiz\", \"mode\": \"vocab\", \"listId\": \"<id_bai_2>\"}}|||"
-  - Học viên: "Vào xem cài đặt" -> "Đang mở trang cài đặt cho sếp đây. |||{\"navigation\": {\"tab\": \"settings\"}}|||"
-
-  VÍ DỤ PHẢN HỒI SAI (TUYỆT ĐỐI KHÔNG LÀM):
-  - "Để chuyển đến trang thêm ngữ pháp, bạn có thể truy cập vào tab grammar..." (SAI - chỉ hướng dẫn bằng lời, không thêm thẻ điều hướng)
-
-  [KIẾN THỨC BẠN ĐÃ LƯU (Dữ liệu RAG)]
-  Sử dụng thông tin dưới đây nếu liên quan đến câu hỏi:
-  [${combinedContext || "Không tìm thấy dữ liệu liên quan trực tiếp trong kho lưu trữ."}]`;
-
-  // Gửi kèm toàn bộ ngữ pháp bổ trợ sang cho LLaMA 3.3 xử lý luận bàn
   const response = await groq.chat.completions.create({
     messages: [
-      {
-        role: "system",
-        content: systemPrompt
-      },
-      ...trimmedMessages
+      { role: "system", content: systemPrompt },
+      ...compressedMessages
     ],
     model: "llama-3.3-70b-versatile",
-    temperature: 0.2, // Lower temperature to follow instructions strictly
+    temperature: 0.1, // giảm xuống 0.1 để output ngắn gọn, ít token hơn
+    max_tokens: 512,  // giới hạn output tối đa: đủ trả lời + nav tag
   });
 
   const aiReply = response.choices[0]?.message?.content || "";
