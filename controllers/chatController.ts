@@ -216,18 +216,20 @@ export const handleChat = asyncHandler(async (
     + "memory" (Memory Match): Lật thạch bản cổ ngữ
     + "tower" (Word Tower): Tháp từ vựng ngữ pháp
     + "grammar_match" (Grammar Match/Linker): Game ghép cặp câu ví dụ ngữ pháp
+    + "vocab_match" (Vocab Match): Game ghép cặp từ vựng Nhật ngữ với nghĩa tiếng Việt
   - mode (dùng khi tab là "quiz" để chỉ định chế độ trắc nghiệm):
     + "vocab" (Trắc nghiệm Từ vựng)
     + "grammar" (Trắc nghiệm Ngữ pháp)
-  - listId: Điền ID của bài học từ vựng (chọn từ danh sách bài học dưới đây) nếu chế độ được chọn là trắc nghiệm từ vựng, flashcards, study, hoặc các game từ vựng (hunter, missing, slash, memory).
+  - listId: Điền ID của bài học từ vựng (chọn từ danh sách bài học dưới đây) nếu chế độ được chọn là trắc nghiệm từ vựng, flashcards, study, hoặc các game từ vựng (hunter, missing, slash, memory, vocab_match).
   - topicTitle: Điền Tiêu đề (Title) của bài học chứa ngữ pháp (chọn từ danh sách bài học dưới đây) nếu chế độ được chọn là trắc nghiệm ngữ pháp hoặc game grammar_match.
 
   [DANH SÁCH CÁC BÀI HỌC/CHỦ ĐỀ ĐANG CÓ TRONG HỆ THỐNG]
   ${vocabListsPromptText || "Không có bài học nào đang tồn tại."}
 
   VÍ DỤ PHẢN HỒI:
-  - Học viên: "Ta muốn luyện tập" -> Trả về: "Chào sếp! Hệ thống của chúng ta có các chế độ luyện tập sau:\n1. Thẻ ghi nhớ (Flashcards)\n2. Tự học từ vựng (Study)\n3. Trắc nghiệm (Quiz) với 2 chế độ: Trắc nghiệm từ vựng & Trắc nghiệm ngữ pháp\n4. Các Trò chơi tại Trận Pháp Điện: Meaning Hunter (Săn nghĩa), Missing Word (Điền từ), Kanji Slash (Chém chữ Kanji), Memory Cultivation (Lật thẻ bài), Word Tower (Tháp từ vựng), và Grammar Match (Ghép câu ngữ pháp).\n\nSếp muốn luyện tập chế độ nào? Và sếp muốn luyện theo bài học nào trong các bài sau: [Liệt kê một vài bài tiêu biểu như Bài 1, Bài 2]?"
+  - Học viên: "Ta muốn luyện tập" -> Trả về: "Chào sếp! Hệ thống của chúng ta có các chế độ luyện tập sau:\n1. Thẻ ghi nhớ (Flashcards)\n2. Tự học từ vựng (Study)\n3. Trắc nghiệm (Quiz) với 2 chế độ: Trắc nghiệm từ vựng & Trắc nghiệm ngữ pháp\n4. Các Trò chơi tại Trận Pháp Điện: Meaning Hunter (Săn nghĩa), Missing Word (Điền từ), Kanji Slash (Chém chữ Kanji), Memory Cultivation (Lật thẻ bài), Word Tower (Tháp từ vựng), Grammar Match (Ghép câu ngữ pháp), và Vocab Match (Ghép từ vựng).\n\nSếp muốn luyện tập chế độ nào? Và sếp muốn luyện theo bài học nào trong các bài sau: [Liệt kê một vài bài tiêu biểu như Bài 1, Bài 2]?"
   - Học viên: "Mở game ghép câu ví dụ ngữ pháp bài 1" -> Trả về: "Đã rõ, ta sẽ mở game ghép cặp ví dụ ngữ pháp của bài 1 cho sếp ngay! |||{\"navigation\": {\"tab\": \"match\", \"game\": \"grammar_match\", \"topicTitle\": \"Bài 1\"}}|||"
+  - Học viên: "Mở game match từ vựng bài 2" (Giả sử Bài 2 có ID: "60d5f...") -> Trả về: "Tiên Sư sẽ mở game ghép từ vựng của bài 2 cho sếp ngay! |||{\"navigation\": {\"tab\": \"match\", \"game\": \"vocab_match\", \"listId\": \"60d5f...\"}}|||"
   - Học viên: "Vào trắc nghiệm từ vựng bài 2" (Giả sử Bài 2 có ID: "60d5f...") -> Trả về: "Tiên Sư đang chuẩn bị đài thi đấu trắc nghiệm từ vựng Bài 2 cho sếp đây. |||{\"navigation\": {\"tab\": \"quiz\", \"mode\": \"vocab\", \"listId\": \"60d5f...\"}}|||"
   - Học viên: "Cho ta ôn tập flashcard Bài 1" (Giả sử Bài 1 có ID: "60d5e...") -> Trả về: "Tiên Sư sẽ mở phần thẻ ghi nhớ học tập của Bài 1 cho sếp ngay. |||{\"navigation\": {\"tab\": \"flashcards\", \"listId\": \"60d5e...\"}}|||"
   - Học viên: "Vào xem bảng cài đặt" -> Trả về: "Tiên Sư đang mở trang cài đặt cho sếp đây. |||{\"navigation\": {\"tab\": \"settings\"}}|||"

@@ -1,5 +1,8 @@
 import express from "express";
 import cors from "cors";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
 
 import connectDB from "./config/db.js";
 import kanjiRoutes from "./routes/kanji.js";
@@ -37,20 +40,34 @@ app.use("/api/vocab", vocabRoute);
 app.use("/api/rag", ragRoutes);
 app.use("/api/kanji", kanjiRoutes);
 
+// Phục vụ các tệp tĩnh và fallback định tuyến của Frontend khi có thư mục build 'dist'
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const distPath = path.join(__dirname, "../AI_Sensei_Web/dist");
+
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/api")) {
+      return next();
+    }
+    res.sendFile(path.join(distPath, "index.html"));
+  });
+}
+
 // Global Error Handler Middleware
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-// Chỉ chạy app.listen khi sếp code ở máy local
-if (process.env.NODE_ENV !== "production") {
+// Khởi chạy HTTP Server trên các môi trường thông thường (Local, Render, Heroku...), ngoại trừ Vercel
+if (!process.env.VERCEL) {
   app.listen(PORT, () => {
-    const isRender = process.env.MONGODB_URI;
     console.log(`
     =================================================
     🚀 SERVER ĐÃ KHỞI ĐỘNG THÀNH CÔNG!
     =================================================
-    🌍 Chế độ: DEVELOPMENT (Local)
+    🌍 Chế độ: DEVELOPMENT/PRODUCTION (Non-Vercel)
     🔗 URL: http://localhost:${PORT}
     =================================================
     `);
