@@ -165,7 +165,7 @@ PHẢI tự navigate. Ví dụ: "thêm ngữ pháp"->|||{"navigation":{"tab":"ad
     ? `\nBÀI HỌC: ${vocabListsPromptText}${grammarListsPromptText ? "\nNGỦ PHÁP: " + grammarListsPromptText : ""}`
     : "";
 
-  const systemPrompt = `Sensei dạy tiếng Nhật/BrSE. Tiếng Việt, gọi user là "sếp". Không dùng emoji.${navSection}${practiceSection}${combinedContext ? "\nKIẾN THỨC:[" + combinedContext + "]" : ""}`;
+  const systemPrompt = `Bạn là Shiba, trợ lý AI dạy tiếng Nhật. Tiếng Việt, xưng hô là "Shiba" và gọi người dùng là "bạn" hoặc "học viên" (KHÔNG dùng từ "sếp"). Không dùng emoji. Trả lời cực kỳ ngắn gọn, súc tích. Đặc biệt, nếu người dùng muốn chuyển trang, hãy nói cực kỳ ngắn gọn (không quá 15 từ, ví dụ: "Để Shiba đưa bạn qua đó nhé!") rồi trả về thẻ điều hướng.${navSection}${practiceSection}${combinedContext ? "\nKIẾN THỨC:[" + combinedContext + "]" : ""}`;
 
 
   const response = await groq.chat.completions.create({
@@ -258,17 +258,17 @@ export const generateQuizByTopic = asyncHandler(async (
     isTitleExistsInPinecone = true;
   }
 
-  console.log("=== 🌲 [QUIZ] DATA FROM PINECONE RAG ===");
-  console.log(grammarContext || "❌ RỖNG: Chưa có cấu trúc nào trên Pinecone.");
+  console.log("===  [QUIZ] DATA FROM PINECONE RAG ===");
+  console.log(grammarContext || " RỖNG: Chưa có cấu trúc nào trên Pinecone.");
 
   // ĐẢO CỰC: Nếu đã nạp tài liệu bên Pinecone rồi thì chặn đứng, không cào từ vựng bên Mongo làm nặng đề
   let mongoVocabText = "";
 
   if (isTitleExistsInPinecone) {
-    console.log("==> 🌲 Pinecone đã có bài rồi sếp ơi! Bỏ qua, quyết không bốc từ vựng từ Mongo nữa.");
+    console.log("==>  Pinecone đã có bài rồi sếp ơi! Bỏ qua, quyết không bốc từ vựng từ Mongo nữa.");
     mongoVocabText = "Chủ đề này tập trung xoáy sâu vào cấu trúc ngữ pháp đã tìm thấy.";
   } else {
-    console.log("==> 🍃 Pinecone trống. Tiến hành truy vấn Mongo Atlas lấy từ vựng bổ trợ...");
+    console.log("==>  Pinecone trống. Tiến hành truy vấn Mongo Atlas lấy từ vựng bổ trợ...");
     
     const currentTopic = await VocabList.findById(topicId);
     if (!currentTopic) {
@@ -287,7 +287,7 @@ export const generateQuizByTopic = asyncHandler(async (
     {
       role: "system",
       content:
-        "Bạn là Sensei dạy tiếng Nhật và kỹ năng BrSE. Hãy trả lời học viên bằng tiếng Việt thân thiện, rõ ràng, đóng vai như một người thầy thực thụ.",
+        "Bạn là Sensei dạy tiếng Nhật . Hãy trả lời học viên bằng tiếng Việt thân thiện, rõ ràng, đóng vai như một người thầy thực thụ.",
     },
     {
       role: "user",
@@ -571,7 +571,7 @@ export const getDailySuggestion = asyncHandler(async (
       }`
     : "Yêu cầu học viên học một bài mới.";
 
-  const systemPrompt = `Bạn là Sensei dạy tiếng Nhật và kỹ năng BrSE.
+  const systemPrompt = `Bạn là Shiba, trợ lý AI dạy tiếng Nhật và kỹ năng BrSE.
   NHIỆM VỤ: Hãy chào học viên bằng Tiếng Việt cực kỳ thân thiện, thông báo bài học hôm qua họ đã xem nhiều nhất (hoặc nhắc nhở nếu hôm qua họ chưa học) và đề xuất:
   1. Đưa ra một câu hỏi ôn tập (quiz) nhanh dựa trên bài học cũ để kiểm tra HỌC VIÊN.
   2. Gợi ý họ nghiên cứu bài học mới ngày hôm nay.
@@ -583,7 +583,7 @@ export const getDailySuggestion = asyncHandler(async (
   - Câu hỏi ôn tập mục tiêu: [${quizPrompt}]
 
   YÊU CẦU TRẢ LỜI:
-  - Giữ phong cách Sensei vui vẻ, khích lệ học viên, gọi người dùng là "sếp" thân mật.
+  - Giữ phong cách Shiba vui vẻ, khích lệ học viên, xưng hô là "Shiba" và gọi người dùng là "bạn" hoặc "học viên" thân mật (KHÔNG dùng từ "sếp").
   - Đưa câu hỏi trắc nghiệm hoặc dịch thuật ngắn gọn, rõ ràng ở cuối tin nhắn.
   - KHÔNG trả về định dạng code markdown dư thừa, chỉ trả về chuỗi text bình thường.`;
 
