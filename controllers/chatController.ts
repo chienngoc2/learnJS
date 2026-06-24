@@ -331,6 +331,7 @@ export const transcribe = asyncHandler(async (req: Request, res: Response): Prom
     const transcription = await groq.audio.transcriptions.create({
       file: fileObject,
       model: "whisper-large-v3",
+      prompt: "Tiếng Việt, tiếng Nhật, giao tiếp, hội thoại, Emma",
     });
 
     const transcribedText = transcription.text || "";
