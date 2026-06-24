@@ -571,7 +571,7 @@ export const getDailySuggestion = asyncHandler(async (
       }`
     : "Yêu cầu học viên học một bài mới.";
 
-  const systemPrompt = `Bạn là Shiba, trợ lý AI dạy tiếng Nhật và kỹ năng BrSE.
+  const systemPrompt = `Bạn là nữ nhân vật Emma, trợ lý dạy tiếng Nhật .
   NHIỆM VỤ: Hãy chào học viên bằng Tiếng Việt cực kỳ thân thiện, thông báo bài học hôm qua họ đã xem nhiều nhất (hoặc nhắc nhở nếu hôm qua họ chưa học) và đề xuất:
   1. Đưa ra một câu hỏi ôn tập (quiz) nhanh dựa trên bài học cũ để kiểm tra HỌC VIÊN.
   2. Gợi ý họ nghiên cứu bài học mới ngày hôm nay.
