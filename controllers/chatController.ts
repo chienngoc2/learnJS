@@ -165,7 +165,7 @@ PHẢI tự navigate. Ví dụ: "thêm ngữ pháp"->|||{"navigation":{"tab":"ad
     ? `\nBÀI HỌC: ${vocabListsPromptText}${grammarListsPromptText ? "\nNGỦ PHÁP: " + grammarListsPromptText : ""}`
     : "";
 
-  const systemPrompt = `Bạn là Shiba, trợ lý AI dạy tiếng Nhật. Tiếng Việt, xưng hô là "Shiba" và gọi người dùng là "bạn" hoặc "học viên" (KHÔNG dùng từ "sếp"). Không dùng emoji. Trả lời cực kỳ ngắn gọn, súc tích. Đặc biệt, nếu người dùng muốn chuyển trang, hãy nói cực kỳ ngắn gọn (không quá 15 từ, ví dụ: "Để Shiba đưa bạn qua đó nhé!") rồi trả về thẻ điều hướng.${navSection}${practiceSection}${combinedContext ? "\nKIẾN THỨC:[" + combinedContext + "]" : ""}`;
+  const systemPrompt = `Bạn là Emma, trợ lý AI dạy tiếng Nhật. Tiếng Việt, xưng hô là "Emma" và gọi người dùng là "bạn" hoặc "học viên" (KHÔNG dùng từ "sếp"). Không dùng emoji. Trả lời cực kỳ ngắn gọn, súc tích. Đặc biệt, nếu người dùng muốn chuyển trang, hãy nói cực kỳ ngắn gọn (không quá 15 từ, ví dụ: "Để Emma đưa bạn qua đó nhé!") rồi trả về thẻ điều hướng.${navSection}${practiceSection}${combinedContext ? "\nKIẾN THỨC:[" + combinedContext + "]" : ""}`;
 
 
   const response = await groq.chat.completions.create({
@@ -322,23 +322,19 @@ export const transcribe = asyncHandler(async (req: Request, res: Response): Prom
     throw new ValidationError("Không tìm thấy file âm thanh được tải lên.");
   }
 
-  console.log(`- File path: ${req.file.path}`);
+  console.log(`- File name: ${req.file.originalname}`);
   console.log(`- File size: ${req.file.size} bytes`);
 
   try {
+    const fileObject = await Groq.toFile(req.file.buffer, req.file.originalname || "voice.m4a");
+
     const transcription = await groq.audio.transcriptions.create({
-      file: fs.createReadStream(req.file.path),
+      file: fileObject,
       model: "whisper-large-v3",
     });
 
     const transcribedText = transcription.text || "";
     console.log(`- Transcribed text: "${transcribedText}"`);
-
-    // Clean up temporary audio file from disk
-    if (fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
-      console.log("- Đã dọn dẹp file ghi âm tạm thời.");
-    }
 
     res.status(200).json({
       success: true,
@@ -346,10 +342,6 @@ export const transcribe = asyncHandler(async (req: Request, res: Response): Prom
     });
   } catch (error: any) {
     console.error("❌ Lỗi chuyển đổi giọng nói:", error.message);
-    // Cleanup on error too
-    if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
-    }
     throw new ValidationError(`Lỗi Whisper AI: ${error.message}`);
   }
 });
@@ -583,7 +575,7 @@ export const getDailySuggestion = asyncHandler(async (
   - Câu hỏi ôn tập mục tiêu: [${quizPrompt}]
 
   YÊU CẦU TRẢ LỜI:
-  - Giữ phong cách Shiba vui vẻ, khích lệ học viên, xưng hô là "Shiba" và gọi người dùng là "bạn" hoặc "học viên" thân mật (KHÔNG dùng từ "sếp").
+  - Giữ phong cách Emma vui vẻ, khích lệ học viên, xưng hô là "Emma" và gọi người dùng là "bạn" hoặc "học viên" thân mật (KHÔNG dùng từ "sếp").
   - Đưa câu hỏi trắc nghiệm hoặc dịch thuật ngắn gọn, rõ ràng ở cuối tin nhắn.
   - KHÔNG trả về định dạng code markdown dư thừa, chỉ trả về chuỗi text bình thường.`;
 
