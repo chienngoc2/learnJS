@@ -31,6 +31,7 @@ export interface IVocabList extends Document {
   title: string;
   words: IWord[];
   grammarPoints: IGrammarPoint[]; 
+  userId?: mongoose.Types.ObjectId;
   createdAt: Date;
 }
 
@@ -39,6 +40,7 @@ export interface IVocabList extends Document {
 // ==========================================
 const vocabListSchema = new Schema<IVocabList>({
   title: { type: String, required: true },
+  userId: { type: Schema.Types.ObjectId, ref: "User", index: true },
   
   words: [
     {

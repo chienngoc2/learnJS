@@ -43,8 +43,16 @@ interface AddGrammarReqBody {
 // @desc    Lấy tất cả danh sách bài học
 // @route   GET /api/vocab/lists
 export const getAllLists = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const lists = await VocabList.find()
-    .select("title createdAt words")
+  const authReq = req as AuthenticatedRequest;
+  const userId = authReq.user?._id;
+  
+  // Lấy các bài học do user tạo hoặc bài học mặc định của hệ thống (không có userId)
+  const query = userId 
+    ? { $or: [{ userId }, { userId: { $exists: false } }, { userId: null }] }
+    : { $or: [{ userId: { $exists: false } }, { userId: null }] };
+
+  const lists = await VocabList.find(query)
+    .select("title createdAt words userId")
     .sort({ createdAt: -1 });
   res.json({ success: true, data: lists });
 });
@@ -175,6 +183,8 @@ export const createList = asyncHandler(async (
   req: Request<{}, {}, VocabRequestBody>, 
   res: Response
 ): Promise<void> => {
+  const authReq = req as AuthenticatedRequest;
+  const userId = authReq.user?._id;
   const { title, list } = req.body;
 
   if (!title || !list || !Array.isArray(list)) {
@@ -188,6 +198,7 @@ export const createList = asyncHandler(async (
   const newList = new VocabList({
     title: title,
     words: normalizedWords,
+    userId: userId
   });
   await newList.save();
   
@@ -203,8 +214,11 @@ export const saveReviewList = asyncHandler(async (
   req: Request<{}, {}, VocabRequestBody>, 
   res: Response
 ): Promise<void> => {
+  const authReq = req as AuthenticatedRequest;
+  const userId = authReq.user?._id;
   const { title, list } = req.body;
-  let existing = await VocabList.findOne({ title: title });
+  
+  let existing = await VocabList.findOne({ title: title, userId: userId });
   let targetId = "";
 
   const normalized = normalizeWordsList(list);
@@ -217,7 +231,7 @@ export const saveReviewList = asyncHandler(async (
     await existing.save();
     targetId = existing._id.toString();
   } else {
-    const newList = new VocabList({ title, words: normalized });
+    const newList = new VocabList({ title, words: normalized, userId: userId });
     await newList.save();
     targetId = newList._id.toString();
   }
@@ -234,29 +248,44 @@ export const updateList = asyncHandler(async (
   req: Request<{ id: string }, {}, VocabRequestBody>, 
   res: Response
 ): Promise<void> => {
+  const authReq = req as AuthenticatedRequest;
+  const userId = authReq.user?._id;
   const { title, list } = req.body;
-  const normalized = normalizeWordsList(list);
-  const updatedList = await VocabList.findByIdAndUpdate(
-    req.params.id,
-    { title: title, words: normalized },
-    { new: true }
-  );
 
-  if (updatedList) {
-    // Tự động cập nhật Pinecone
-    syncVocabListToPinecone(updatedList._id.toString());
+  const targetList = await VocabList.findById(req.params.id);
+  if (!targetList) {
+    throw new NotFoundError("Không tìm thấy bài học");
+  }
+  if (targetList.userId && targetList.userId.toString() !== userId?.toString()) {
+    throw new UnauthorizedError("Bạn không có quyền chỉnh sửa bài học này");
   }
 
-  res.json({ success: true, data: updatedList });
+  const normalized = normalizeWordsList(list);
+  targetList.title = title;
+  targetList.words = normalized;
+  await targetList.save();
+
+  // Tự động cập nhật Pinecone
+  syncVocabListToPinecone(targetList._id.toString());
+
+  res.json({ success: true, data: targetList });
 });
 
 // @desc    Xóa bài học theo ID
 // @route   DELETE /api/vocab/delete/:id
 export const deleteList = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const deleted = await VocabList.findByIdAndDelete(req.params.id);
-  if (!deleted) {
+  const authReq = req as AuthenticatedRequest;
+  const userId = authReq.user?._id;
+
+  const targetList = await VocabList.findById(req.params.id);
+  if (!targetList) {
     throw new NotFoundError("Không tìm thấy bài học để xóa");
   }
+  if (targetList.userId && targetList.userId.toString() !== userId?.toString()) {
+    throw new UnauthorizedError("Bạn không có quyền xóa bài học này");
+  }
+
+  await VocabList.findByIdAndDelete(req.params.id);
 
   // Tự động xóa trên Pinecone
   deleteVocabListFromPinecone(req.params.id);
