@@ -3,10 +3,10 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-let isConnected = false;
+let cachedPromise = null;
 
 const connectDB = async () => {
-  if (isConnected || mongoose.connection.readyState >= 1) {
+  if (mongoose.connection.readyState === 1) {
     return mongoose.connection;
   }
 
@@ -16,28 +16,30 @@ const connectDB = async () => {
     return null;
   }
 
-  try {
-    const conn = await mongoose.connect(mongoUri, {
-      bufferCommands: false,
-      serverSelectionTimeoutMS: 5000,
-    });
-    isConnected = true;
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
-    
-    // Tự động xử lý index nếu cần
-    try {
-      if (mongoose.connection.db) {
-        await mongoose.connection.db.collection("kanjis").dropIndex("character_1").catch(() => {});
-      }
-    } catch (e) {
-      // Bỏ qua nếu index không tồn tại
-    }
-    return conn;
-  } catch (error) {
-    console.error(`❌ MongoDB Connection Error: ${error.message}`);
-    // Không gọi process.exit(1) để tránh làm sập serverless / container
-    return null;
+  if (!cachedPromise) {
+    cachedPromise = mongoose
+      .connect(mongoUri, {
+        serverSelectionTimeoutMS: 8000,
+      })
+      .then((conn) => {
+        console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+        // Tự động xử lý index nếu cần
+        if (mongoose.connection.db) {
+          mongoose.connection.db
+            .collection("kanjis")
+            .dropIndex("character_1")
+            .catch(() => {});
+        }
+        return conn;
+      })
+      .catch((err) => {
+        cachedPromise = null;
+        console.error(`❌ MongoDB Connection Error: ${err.message}`);
+        throw err;
+      });
   }
+
+  return cachedPromise;
 };
 
 export default connectDB;

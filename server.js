@@ -30,7 +30,31 @@ app.use(
   }),
 );
 app.use(express.json());
-// app.use(express.static("public")); // Nếu chỉ làm API cho Mobile thì không cần dòng này
+
+// Tự động đảm bảo kết nối Database sẵn sàng trước khi xử lý API (Đặc biệt quan trọng cho Serverless Vercel)
+app.use(async (req, res, next) => {
+  if (req.path === "/api/health" || req.path === "/") {
+    return next();
+  }
+  try {
+    const db = await connectDB();
+    if (!db && !process.env.MONGODB_URI) {
+      return res.status(500).json({
+        success: false,
+        error: "Chưa cấu hình biến môi trường MONGODB_URI trên server Vercel.",
+        message: "Vui lòng thêm MONGODB_URI vào Vercel Project Settings -> Environment Variables.",
+      });
+    }
+    next();
+  } catch (err) {
+    console.error("❌ DB Middleware Error:", err.message);
+    res.status(500).json({
+      success: false,
+      error: "Không thể kết nối đến cơ sở dữ liệu MongoDB: " + err.message,
+      message: "Lỗi kết nối cơ sở dữ liệu. Vui lòng kiểm tra MONGODB_URI và Network Access IP whitelist trên MongoDB Atlas.",
+    });
+  }
+});
 
 // 3. Kết nối Router (Prefix rõ ràng để sau này dễ quản lý)
 app.use("/api/auth", authRoutes);
