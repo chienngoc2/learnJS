@@ -2,7 +2,7 @@
 
 import type { Request, Response } from "express";
 import { Pinecone } from "@pinecone-database/pinecone";
-import Groq from "groq-sdk";
+import Groq, { toFile } from "groq-sdk";
 import VocabList from "../models/VocabList.js"; 
 import StudyLog from "../models/StudyLog.js";
 import Kanji from "../models/Kanji.js";
@@ -37,7 +37,7 @@ interface DirectQuizRequestBody {
 }
 
 // =========================================================================
-// 🔌 2. KHỞI TẠO CÁC THIRD-PARTY CLIENTS (An toàn khi thiếu ENV)
+// 🔌 2. KHỞI TẠO CÁC THIRD-PARTY CLIENTS (An toàn khi thiếu ENV & tương thích Vercel)
 // =========================================================================
 const getPineconeClient = () => {
   if (!process.env.PINECONE_API_KEY) return null;
@@ -49,11 +49,12 @@ const getPineconeClient = () => {
   }
 };
 
-const getGroqClient = () => {
+const getGroqClient = (): any => {
   if (!process.env.GROQ_API_KEY) {
     console.warn("⚠️ Chưa cấu hình GROQ_API_KEY trong .env");
   }
-  return new Groq({ apiKey: process.env.GROQ_API_KEY || "dummy-key" });
+  const GroqConstructor: any = (Groq as any).Groq || Groq;
+  return new GroqConstructor({ apiKey: process.env.GROQ_API_KEY || "dummy-key" });
 };
 
 const groq = getGroqClient();
@@ -245,7 +246,7 @@ export const transcribe = asyncHandler(async (req: any, res: Response): Promise<
   }
 
   try {
-    const fileObject = await Groq.toFile(req.file.buffer, req.file.originalname || "voice.m4a");
+    const fileObject = await toFile(req.file.buffer, req.file.originalname || "voice.m4a");
 
     const transcription = await groq.audio.transcriptions.create({
       file: fileObject,
@@ -289,7 +290,7 @@ export const evaluatePronunciation = asyncHandler(async (req: any, res: Response
 
   try {
     // 1. Nhận diện giọng nói qua Whisper
-    const fileObject = await Groq.toFile(req.file.buffer, req.file.originalname || "voice.m4a");
+    const fileObject = await toFile(req.file.buffer, req.file.originalname || "voice.m4a");
     const transcription = await groq.audio.transcriptions.create({
       file: fileObject,
       model: "whisper-large-v3",
