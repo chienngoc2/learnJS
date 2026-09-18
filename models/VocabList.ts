@@ -6,14 +6,18 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 // 1. ĐỊNH NGHĨA INTERFACE (CHUẨN TYPESCRIPT)
 // ==========================================
 export interface IWord {
-  term: string;
-  def: string;
+  term: string; // Chữ Hán Phồn Thể
+  def: string; // Nghĩa tiếng Việt
+  pinyin?: string; // Phiên âm Pinyin
+  zhuyin?: string; // Chú âm Zhuyin (ㄋㄧˇ ㄏㄠˇ)
+  hanviet?: string; // Âm Hán Việt
   correctCount?: number;
   reading?: string;
   meaning?: string;
   type?: string;
-  jlpt?: string;
-  examples?: Array<{ jp: string; vn: string }>;
+  level?: string; // TOCFL A1-C2, HSK...
+  jlpt?: string; // Legacy
+  examples?: Array<{ cn?: string; jp?: string; pinyin?: string; vn: string }>;
   audio?: string;
   tags?: string[];
   notes?: string;
@@ -24,7 +28,7 @@ export interface IGrammarPoint {
   title: string;
   formula?: string;
   meaning: string;
-  examples: string[]; // 🚀 ĐÃ FIX: Mảng chuỗi trong TypeScript phải viết thế này
+  examples: string[];
 }
 
 export interface IVocabList extends Document {
@@ -46,10 +50,14 @@ const vocabListSchema = new Schema<IVocabList>({
     {
       term: { type: String, required: true },
       def: { type: String, required: true },
+      pinyin: { type: String },
+      zhuyin: { type: String },
+      hanviet: { type: String },
       correctCount: { type: Number, default: 0 },
       reading: { type: String },
       meaning: { type: String },
       type: { type: String },
+      level: { type: String, default: "TOCFL A1" },
       jlpt: { type: String },
       examples: { type: [Schema.Types.Mixed], default: undefined },
       audio: { type: String },

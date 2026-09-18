@@ -72,15 +72,15 @@ const EN_KEYWORDS = [
 
 /**
  * Nhận diện ngôn ngữ dựa trên Regex và từ khóa
- * Ưu tiên: Nhật -> Việt (có dấu) -> Anh -> Việt (không dấu)
+ * Ưu tiên: Tiếng Trung Phồn Thể / Chữ Hán / Chú âm Zhuyin (zh-TW) -> Việt -> Anh
  */
 export function detectLanguage(text) {
   if (!text) return "vi";
   const clean = text.trim();
 
-  // 1. Kiểm tra tiếng Nhật (Hiragana, Katakana, Kanji)
-  if (/[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]/.test(clean)) {
-    return "ja";
+  // 1. Kiểm tra Tiếng Trung Phồn Thể & Chú âm Zhuyin (Bopomofo: \u3105-\u312f, Hanzi: \u4e00-\u9fa5, \u3400-\u4dbf)
+  if (/[\u3105-\u312f\u31a0-\u31bf\u4e00-\u9fff\u3400-\u4dbf]/.test(clean)) {
+    return "zh-TW";
   }
 
   // 2. Kiểm tra tiếng Việt có dấu
@@ -101,7 +101,8 @@ export function detectLanguage(text) {
 
   if (hasEnglishKeyword) return "en";
 
-  // Kiểm tra ký tự phiên âm quốc tế (IPA) - Hữu ích khi AI giải thích phát âm
+  // Kiểm tra ký tự phiên âm quốc tế (IPA) hoặc Pinyin có dấu (ā, á, ǎ, à, ē, é, ě, è, ī, í, ǐ, ì, ō, ó, ǒ, ò, ū, ú, ǔ, ù, ǖ, ǘ, ǚ, ǜ)
+  if (/[āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]/.test(clean)) return "zh-TW";
   if (/[ːʃʒθðŋæəɪʊʌɔɛ]/.test(clean)) return "en";
 
   // Kiểm tra tỷ lệ từ tiếng Anh trong câu dài
@@ -113,6 +114,6 @@ export function detectLanguage(text) {
     if (enCount / words.length > 0.5) return "en";
   }
 
-  // Mặc định trả về tiếng Việt (Dành cho các câu không dấu)
+  // Mặc định trả về tiếng Việt
   return "vi";
 }

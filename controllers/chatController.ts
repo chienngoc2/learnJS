@@ -3,17 +3,16 @@
 import type { Request, Response } from "express";
 import { Pinecone } from "@pinecone-database/pinecone";
 import Groq from "groq-sdk";
-import fs from "fs";
 import VocabList from "../models/VocabList.js"; 
 import StudyLog from "../models/StudyLog.js";
 import Kanji from "../models/Kanji.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
-import { ValidationError, NotFoundError } from "../utils/errors.js";
+import { ValidationError, NotFoundError, UnauthorizedError } from "../utils/errors.js";
 import { AuthenticatedRequest } from "../middleware/authMiddleware.js";
 import { generateSmartAudio } from "../utils/audio.js";
 
 // =========================================================================
-// 📦 1. ĐỊNH NGHĨA CÁC INTERFACES MẪU (Gom gọn lên đầu trang quản lý chặt chẽ)
+// 📦 1. ĐỊNH NGHĨA CÁC INTERFACES MẪU
 // =========================================================================
 interface QuizRequestBody {
   topicId: string;
@@ -34,21 +33,37 @@ interface DirectQuizRequestBody {
   formula?: string;
   meaning: string;
   examples?: string[];
-  type?: "type_jp" | "translate_vi";
+  type?: "type_cn" | "translate_vi";
 }
 
 // =========================================================================
-// 🔌 2. KHỞI TẠO CÁC THIRD-PARTY CLIENTS (Bọc "as string" né lỗi Strict Null Check)
+// 🔌 2. KHỞI TẠO CÁC THIRD-PARTY CLIENTS (An toàn khi thiếu ENV)
 // =========================================================================
-const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY as string });
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY as string });
+const getPineconeClient = () => {
+  if (!process.env.PINECONE_API_KEY) return null;
+  try {
+    return new Pinecone({ apiKey: process.env.PINECONE_API_KEY });
+  } catch (err: any) {
+    console.warn("⚠️ Không thể khởi tạo Pinecone:", err.message);
+    return null;
+  }
+};
+
+const getGroqClient = () => {
+  if (!process.env.GROQ_API_KEY) {
+    console.warn("⚠️ Chưa cấu hình GROQ_API_KEY trong .env");
+  }
+  return new Groq({ apiKey: process.env.GROQ_API_KEY || "dummy-key" });
+};
+
+const groq = getGroqClient();
 
 // =========================================================================
 // 💬 3. CÁC HÀM XỬ LÝ LOGIC (CONTROLLERS)
 // =========================================================================
 
 /**
- * 🔥 HÀM 1: Xử lý Chat thông thường với Sensei (Có tích hợp RAG tự động)
+ * 🔥 HÀM 1: Xử lý Chat với Sensei Emma (Tối ưu Tiếng Trung Phồn Thể 繁體中文)
  */
 export const handleChat = asyncHandler(async (
   req: Request<{}, {}, ChatRequestBody>,
@@ -64,7 +79,7 @@ export const handleChat = asyncHandler(async (
   const trimmedMessages = messages.slice(-4);
   const lastUserMessage = trimmedMessages[trimmedMessages.length - 1]?.content || "";
 
-  // Nén lịch sử: chỉ giữ 120 ký tự đầu của các tin nhắn assistant cũ (giảm bồng to context)
+  // Nén lịch sử: chỉ giữ 120 ký tự đầu của các tin nhắn assistant cũ
   const compressedMessages = trimmedMessages.map((m, i) => {
     const isLastUser = i === trimmedMessages.length - 1;
     if (!isLastUser && m.role === "assistant" && m.content.length > 120) {
@@ -75,47 +90,48 @@ export const handleChat = asyncHandler(async (
 
   console.log("[CHAT] Q:", lastUserMessage.substring(0, 80));
 
-  // RAG Pinecone — topK=3 lấy đủ ngữ cảnh, ít token hơn
+  // RAG Pinecone
   let ragContext = "";
-  try {
-    const index = pc.index(process.env.PINECONE_INDEX_NAME as string);
-    const searchResults = await index.searchRecords({
-      query: { inputs: { text: lastUserMessage }, topK: 3 },
-      fields: ["text"],
-    });
-    if (searchResults.result?.hits?.length > 0) {
-      ragContext = searchResults.result.hits
-        .map((h: any) => (h.fields.text as string).substring(0, 300)) // cap 300 chars/hit
-        .join("\n");
+  const pc = getPineconeClient();
+  if (pc && process.env.PINECONE_INDEX_NAME) {
+    try {
+      const index = pc.index(process.env.PINECONE_INDEX_NAME);
+      const searchResults = await index.searchRecords({
+        query: { inputs: { text: lastUserMessage }, topK: 3 },
+        fields: ["text"],
+      });
+      if (searchResults.result?.hits?.length > 0) {
+        ragContext = searchResults.result.hits
+          .map((h: any) => (h.fields.text as string).substring(0, 300))
+          .join("\n");
+      }
+    } catch (e: any) {
+      console.error("[Pinecone]", e.message);
     }
-  } catch (e: any) {
-    console.error("[Pinecone]", e.message);
   }
 
-  // === CONDITIONAL CONTEXT INJECTION (cost-latency-optimizer) ===
-  // Chỉ truy vấn DB khi câu hỏi thực sự liên quan → tiết kiệm token + latency
-
-  // 1. Kanji — chỉ khi có từ khóa kanji/hán rõ ràng (không phải chỉ vì "bài")
+  // 1. Chữ Hán Phồn Thể — chỉ khi có từ khóa Hán / Phồn Thể
   let kanjiContext = "";
-  const hasKanjiKeywords = /kanji|chữ hán|hán tự|hán việt/i.test(lastUserMessage);
+  const hasKanjiKeywords = /hán|phồn thể|zhuyin|chú âm|bopomofo|pinyin|bộ thủ|chữ|bài/i.test(lastUserMessage);
   if (hasKanjiKeywords) {
     try {
       const numMatch = lastUserMessage.match(/(?:bài|lesson|nhóm)\s*(\d+)/i);
-      const jpChars = lastUserMessage.match(/[\u4e00-\u9faf]/g);
+      const cnChars = lastUserMessage.match(/[\u4e00-\u9fff\u3400-\u4dbf]/g);
       const queryConds: any[] = [];
       if (numMatch) queryConds.push({ lessonGroup: new RegExp(`\\b0*${numMatch[1]}\\b|bài\\s*0*${numMatch[1]}\\b`, "i") });
-      if (jpChars?.length) queryConds.push({ character: { $in: jpChars } });
+      if (cnChars?.length) queryConds.push({ character: { $in: cnChars } });
       if (queryConds.length > 0) {
         const kanjis = await Kanji.find({ $or: queryConds }).limit(15);
-        if (kanjis.length > 0)
+        if (kanjis.length > 0) {
           kanjiContext = kanjis.map((k) =>
-            `${k.character}(${k.vietnamese_reading}):${k.meaning}|${k.level}|ON:${k.onyomi || "-"}|KUN:${k.kunyomi || "-"}`
+            `${k.character}(Pinyin:${k.pinyin || "-"}|Chú âm:${k.zhuyin || "-"}|Hán Việt:${k.vietnamese_reading}): ${k.meaning} | ${k.level}`
           ).join("\n");
+        }
       }
-    } catch (e: any) { console.error("[Kanji]", e.message); }
+    } catch (e: any) { console.error("[Hanzi]", e.message); }
   }
 
-  // 2. Vocab — chỉ khi hỏi từ vựng bài cụ thể (có số bài)
+  // 2. Vocab — từ vựng tiếng Trung bài cụ thể
   let vocabContext = "";
   const vocabNumMatch = lastUserMessage.match(/(?:từ vựng|vocab|từ mới|bài|lesson).*?(\d+)/i);
   if (vocabNumMatch) {
@@ -123,14 +139,15 @@ export const handleChat = asyncHandler(async (
       const matched = await VocabList.findOne({
         title: new RegExp(`\\b0*${vocabNumMatch[1]}\\b|bài\\s*0*${vocabNumMatch[1]}\\b`, "i")
       }).select("title words").lean() as any;
-      if (matched)
+      if (matched) {
         vocabContext = `Bài "${matched.title}": ` +
-          (matched.words || []).slice(0, 20).map((w: any) => `${w.term}:${w.def}`).join(" | ");
+          (matched.words || []).slice(0, 20).map((w: any) => `${w.term} (${w.pinyin || ""}): ${w.def}`).join(" | ");
+      }
     } catch (e: any) { console.error("[Vocab]", e.message); }
   }
 
-  // 3. Danh sách bài học — chỉ load khi user có intent luyện tập/chuyển trang
-  const hasPracticeIntent = /luyện tập|game|quiz|flashcard|chuyển|mở|vào|chơi|xem|tập|thêm|tạo|học/i.test(lastUserMessage);
+  // 3. Danh sách bài học & điều hướng
+  const hasPracticeIntent = /luyện tập|game|quiz|flashcard|chuyển|mở|vào|chơi|xem|tập|thêm|tạo|học|phát âm/i.test(lastUserMessage);
   let vocabListsPromptText = "";
   let grammarListsPromptText = "";
   if (hasPracticeIntent) {
@@ -146,27 +163,30 @@ export const handleChat = asyncHandler(async (
     } catch (e: any) { console.error("[VocabList]", e.message); }
   }
 
-  // Ghép combined context
+  // Ghép context
   const contextParts: string[] = [];
   if (ragContext) contextParts.push(ragContext);
-  if (kanjiContext) contextParts.push("KANJI:\n" + kanjiContext);
-  if (vocabContext) contextParts.push("TỪ VỰNG:\n" + vocabContext);
+  if (kanjiContext) contextParts.push("CHỮ HÁN PHỒN THỂ:\n" + kanjiContext);
+  if (vocabContext) contextParts.push("TỪ VỰNG PHỒN THỂ:\n" + vocabContext);
   const combinedContext = contextParts.join("\n\n");
 
-  // Chỉ inject NAV_RULES khi user có intent điều hướng/luyện tập
   const navSection = hasPracticeIntent ? `
-NAV FORMAT (cuối reply): |||{"navigation":{"tab":"X",...}}|||
-TABS: add-grammar,grammar-viewer,add-vocab,vocab,grammar,flashcards,study,quiz,match,write,overview,settings,statistics
+NAV FORMAT (cuối reply nếu user muốn chuyển trang/luyện tập): |||{"navigation":{"tab":"X",...}}|||
+TABS: pronunciation,add-grammar,grammar-viewer,add-vocab,vocab,grammar,flashcards,study,quiz,match,write,overview,settings,statistics
 GAMES(tab=match): grammar_match,vocab_match,missing,slash,memory,tower,hunter
-MODES(tab=quiz): vocab,grammar
-PHẢI tự navigate. Ví dụ: "thêm ngữ pháp"->|||{"navigation":{"tab":"add-grammar"}}||| | "nối ngữ pháp"->|||{"navigation":{"tab":"match","game":"grammar_match"}}|||` : "";
+Ví dụ: "luyện phát âm"->|||{"navigation":{"tab":"pronunciation"}}||| | "thêm từ vựng"->|||{"navigation":{"tab":"add-vocab"}}|||` : "";
 
   const practiceSection = hasPracticeIntent && vocabListsPromptText
-    ? `\nBÀI HỌC: ${vocabListsPromptText}${grammarListsPromptText ? "\nNGỦ PHÁP: " + grammarListsPromptText : ""}`
+    ? `\nBÀI HỌC: ${vocabListsPromptText}${grammarListsPromptText ? "\nNGỮ PHÁP: " + grammarListsPromptText : ""}`
     : "";
 
-  const systemPrompt = `Bạn là Emma, trợ lý AI dạy tiếng Nhật. Tiếng Việt, xưng hô là "Emma" và gọi người dùng là "bạn" hoặc "học viên" (KHÔNG dùng từ "sếp"). Không dùng emoji. Trả lời cực kỳ ngắn gọn, súc tích. Đặc biệt, nếu người dùng muốn chuyển trang, hãy nói cực kỳ ngắn gọn (không quá 15 từ, ví dụ: "Để Emma đưa bạn qua đó nhé!") rồi trả về thẻ điều hướng.${navSection}${practiceSection}${combinedContext ? "\nKIẾN THỨC:[" + combinedContext + "]" : ""}`;
-
+  const systemPrompt = `Bạn là Emma, trợ lý AI thông minh chuyên dạy Tiếng Trung Phồn Thể (繁體中文 - Traditional Chinese / Đài Loan, Hồng Kông) và Chú âm Zhuyin (ㄅㄆㄇㄈ), Pinyin, Âm Hán Việt, TOCFL.
+Quy tắc:
+- Giao tiếp bằng Tiếng Việt tự nhiên, xưng là "Emma" và gọi người dùng là "bạn" hoặc "học viên".
+- Luôn ưu tiên hiển thị Chữ Hán Phồn Thể (Traditional Chinese), kèm theo Pinyin có dấu thanh điệu và/hoặc Chú âm Zhuyin, Âm Hán Việt và dịch nghĩa tiếng Việt chính xác.
+- Trả lời ngắn gọn, chuẩn xác ngữ pháp tiếng Trung và phát âm.
+- Không dùng emoji quá đà.
+- Nếu người dùng muốn chuyển trang hay luyện tập, nói ngắn gọn (không quá 15 từ) rồi trả về thẻ điều hướng ở cuối.${navSection}${practiceSection}${combinedContext ? "\nKIẾN THỨC:\n[" + combinedContext + "]" : ""}`;
 
   const response = await groq.chat.completions.create({
     messages: [
@@ -174,17 +194,14 @@ PHẢI tự navigate. Ví dụ: "thêm ngữ pháp"->|||{"navigation":{"tab":"ad
       ...compressedMessages
     ],
     model: "llama-3.3-70b-versatile",
-    temperature: 0.1, // giảm xuống 0.1 để output ngắn gọn, ít token hơn
-    max_tokens: 512,  // giới hạn output tối đa: đủ trả lời + nav tag
+    temperature: 0.2,
+    max_tokens: 512,
   });
 
   const aiReply = response.choices[0]?.message?.content || "";
-  const usage = response.usage; // Lấy thông tin token tiêu thụ thực tế
+  const usage = response.usage;
 
-  console.log("\n=== 🤖 [AI] RAW REPLY FROM LLM ===");
-  console.log(aiReply);
-
-  // Định nghĩa Regex để bóc tách thông tin điều hướng từ phản hồi của LLM
+  // Bóc tách JSON navigation
   let reply = aiReply;
   let navigation = null;
   const navRegex = /\|\|\|([\s\S]*?)\|\|\|/;
@@ -199,12 +216,7 @@ PHẢI tự navigate. Ví dụ: "thêm ngữ pháp"->|||{"navigation":{"tab":"ad
     }
   }
 
-  console.log("=== 🧩 [AI] PARSED NAVIGATION RESULT ===");
-  console.log(navigation);
-  console.log("=== 💬 [AI] CLEAN REPLY TO CLIENT ===");
-  console.log(reply);
-
-  // Tạo audio cho câu trả lời của AI
+  // Tạo audio TTS tiếng Trung Phồn Thể & tiếng Việt
   let audioSegments: string[] = [];
   try {
     if (reply) {
@@ -224,106 +236,13 @@ PHẢI tự navigate. Ví dụ: "thêm ngữ pháp"->|||{"navigation":{"tab":"ad
 });
 
 /**
- * 🚀 HÀM 2: Tạo Quiz theo Topic sử dụng Hybrid RAG (Đảo cực chặn đứng Mongo)
+ * 🎙️ HÀM 2: Nhận diện giọng nói (Audio Transcribe - Whisper AI hỗ trợ Tiếng Trung Phồn Thể)
  */
-export const generateQuizByTopic = asyncHandler(async (
-  req: Request<{}, {}, QuizRequestBody>,
-  res: Response
-): Promise<void> => {
-  const { topicId, userMessage } = req.body;
-
-  console.log("\n=== 📋 [QUIZ] REQUEST ĐẾN ===");
-  console.log(`- topicId: ${topicId}`);
-  console.log(`- userMessage: ${userMessage}`);
-
-  // Truy vấn Pinecone kiểm tra xem "bài học này đã được học ngữ pháp chưa"
-  const index = pc.index(process.env.PINECONE_INDEX_NAME as string);
-
-  const searchResults = await index.searchRecords({
-    query: {
-      inputs: { text: userMessage },
-      topK: 3,
-      filter: { topicId: { $eq: topicId } }, 
-    },
-    fields: ["text"],
-  });
-
-  let grammarContext = "";
-  let isTitleExistsInPinecone = false;
-
-  if (searchResults.result?.hits && searchResults.result.hits.length > 0) {
-    grammarContext = searchResults.result.hits
-      .map((hit: any) => hit.fields.text)
-      .join("\n");
-    isTitleExistsInPinecone = true;
-  }
-
-  console.log("===  [QUIZ] DATA FROM PINECONE RAG ===");
-  console.log(grammarContext || " RỖNG: Chưa có cấu trúc nào trên Pinecone.");
-
-  // ĐẢO CỰC: Nếu đã nạp tài liệu bên Pinecone rồi thì chặn đứng, không cào từ vựng bên Mongo làm nặng đề
-  let mongoVocabText = "";
-
-  if (isTitleExistsInPinecone) {
-    console.log("==>  Pinecone đã có bài rồi sếp ơi! Bỏ qua, quyết không bốc từ vựng từ Mongo nữa.");
-    mongoVocabText = "Chủ đề này tập trung xoáy sâu vào cấu trúc ngữ pháp đã tìm thấy.";
-  } else {
-    console.log("==>  Pinecone trống. Tiến hành truy vấn Mongo Atlas lấy từ vựng bổ trợ...");
-    
-    const currentTopic = await VocabList.findById(topicId);
-    if (!currentTopic) {
-      throw new NotFoundError("Không tìm thấy bài học này trên Mongo.");
-    }
-
-    mongoVocabText = (currentTopic.words as any[])
-      .map((w) => `${w.term}: ${w.def}`)
-      .join(", ");
-      
-    console.log("=== 🍃 [QUIZ] DATA FROM MONGO ATLAS ===");
-    console.log(mongoVocabText);
-  }
-
-  const messages = [
-    {
-      role: "system",
-      content:
-        "Bạn là Sensei dạy tiếng Nhật . Hãy trả lời học viên bằng tiếng Việt thân thiện, rõ ràng, đóng vai như một người thầy thực thụ.",
-    },
-    {
-      role: "user",
-      content: `Hãy tạo 1 câu hỏi thực hành dựa trên thông tin sau:
-        - Danh sách từ vựng bổ trợ (Chỉ có nếu chưa có ngữ pháp): [${mongoVocabText}]
-        - Cấu trúc ngữ pháp cốt lõi (Lấy từ Pinecone RAG): [${grammarContext}]
-        
-        Yêu cầu của học viên: ${userMessage}`,
-    },
-  ];
-
-  const firstResponse = await groq.chat.completions.create({
-    messages: messages as any, 
-    model: "llama-3.3-70b-versatile",
-    temperature: 0.7,
-  });
-
-  const aiReply = firstResponse.choices[0]?.message?.content;
-
-  res.status(200).json({
-    success: true,
-    reply: aiReply,
-  });
-});
-
-/**
- * 🎙️ HÀM 3: Xử lý chuyển đổi giọng nói (Audio Transcribe)
- */
-export const transcribe = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+export const transcribe = asyncHandler(async (req: any, res: Response): Promise<void> => {
   console.log("\n=== 🎙️ [TRANSCRIBE] AUDIO UPLOADED ===");
   if (!req.file) {
     throw new ValidationError("Không tìm thấy file âm thanh được tải lên.");
   }
-
-  console.log(`- File name: ${req.file.originalname}`);
-  console.log(`- File size: ${req.file.size} bytes`);
 
   try {
     const fileObject = await Groq.toFile(req.file.buffer, req.file.originalname || "voice.m4a");
@@ -331,7 +250,8 @@ export const transcribe = asyncHandler(async (req: Request, res: Response): Prom
     const transcription = await groq.audio.transcriptions.create({
       file: fileObject,
       model: "whisper-large-v3",
-      prompt: "Tiếng Việt, tiếng Nhật, giao tiếp, hội thoại, Emma",
+      prompt: "繁體中文, 國語, 台灣華語, Tiếng Trung Phồn Thể, Pinyin, Zhuyin, Tiếng Việt",
+      language: "zh",
     });
 
     const transcribedText = transcription.text || "";
@@ -348,15 +268,120 @@ export const transcribe = asyncHandler(async (req: Request, res: Response): Prom
 });
 
 /**
+ * 🎯 HÀM 3: ĐỌC PHÁT ÂM VÀ MÁY NHẬN DIỆN CHẤM ĐIỂM AI (Pronunciation Assessment)
+ * @route POST /api/chat/evaluate-pronunciation
+ */
+export const evaluatePronunciation = asyncHandler(async (req: any, res: Response): Promise<void> => {
+  console.log("\n=== 🎯 [PRONUNCIATION ASSESSMENT] ===");
+  if (!req.file) {
+    throw new ValidationError("Chưa nhận được file ghi âm giọng nói.");
+  }
+
+  const targetText = req.body.targetText || req.body.text || "";
+  const targetPinyin = req.body.pinyin || "";
+  const targetMeaning = req.body.meaning || "";
+
+  if (!targetText) {
+    throw new ValidationError("Thiếu câu/từ mẫu tiếng Trung cần kiểm tra phát âm.");
+  }
+
+  console.log(`- Target text: "${targetText}" (${targetPinyin})`);
+
+  try {
+    // 1. Nhận diện giọng nói qua Whisper
+    const fileObject = await Groq.toFile(req.file.buffer, req.file.originalname || "voice.m4a");
+    const transcription = await groq.audio.transcriptions.create({
+      file: fileObject,
+      model: "whisper-large-v3",
+      prompt: `繁體中文: ${targetText}`,
+      language: "zh",
+    });
+
+    const spokenText = (transcription.text || "").trim();
+    console.log(`- User spoken: "${spokenText}"`);
+
+    // 2. Chấm điểm & phân tích chi tiết bằng AI LLM
+    const evaluationPrompt = `Bạn là chuyên gia thẩm định và chỉnh âm Tiếng Trung Phồn Thể (Traditional Chinese / Taiwanese Mandarin) chuẩn bản xứ.
+Nhiệm vụ: Chấm điểm và phân tích phát âm của học viên khi đọc câu mục tiêu.
+
+MỤC TIÊU:
+- Câu/từ mẫu chuẩn (Phồn Thể): "${targetText}"
+- Pinyin chuẩn: "${targetPinyin || "Tự phân tích"}"
+- Nghĩa: "${targetMeaning || "Tự phân tích"}"
+- Đoạn âm thanh học viên vừa đọc (Whisper STT ghi lại): "${spokenText || "(Không nghe rõ hoặc im lặng)"}"
+
+HÃY ĐÁNH GIÁ VÀ TRẢ VỀ JSON DUY NHẤT VỚI CẤU TRÚC:
+{
+  "score": <điểm số từ 0 đến 100, dựa trên độ chính xác phụ âm, nguyên âm, 4 thanh điệu tiếng Trung và độ lưu loát>,
+  "spokenText": "${spokenText.replace(/"/g, '\\"')}",
+  "targetText": "${targetText.replace(/"/g, '\\"')}",
+  "isCorrect": <true nếu score >= 75, ngược lại false>,
+  "phoneticFeedback": "Nhận xét chi tiết bằng tiếng Việt ngắn gọn về thanh điệu (thanh 1,2,3,4), âm bật hơi (p, t, k, q, ch, c), âm uốn lưỡi (zh, ch, sh, r), và cách cải thiện khẩu hình",
+  "charAnalysis": [
+    {
+      "char": "Ký tự",
+      "pinyin": "pīnyīn",
+      "zhuyin": "ㄓㄨˋ ㄧㄣ",
+      "status": "correct" | "tone_error" | "phoneme_error" | "missed",
+      "note": "Ghi chú ngắn nếu có"
+    }
+  ]
+}`;
+
+    const completion = await groq.chat.completions.create({
+      messages: [{ role: "system", content: evaluationPrompt }],
+      model: "llama-3.3-70b-versatile",
+      temperature: 0.1,
+      response_format: { type: "json_object" },
+    });
+
+    let evalJson: any = {};
+    const rawContent = completion.choices[0]?.message?.content || "{}";
+    try {
+      evalJson = JSON.parse(rawContent);
+    } catch (parseErr) {
+      evalJson = {
+        score: spokenText.includes(targetText) ? 90 : 60,
+        spokenText,
+        targetText,
+        isCorrect: spokenText.includes(targetText),
+        phoneticFeedback: "Phát âm khá tốt, cần lưu ý thêm cao độ thanh điệu.",
+      };
+    }
+
+    // 3. Tạo mẫu audio phát âm chuẩn zh-TW để học viên nghe lại
+    let audioReference: string[] = [];
+    try {
+      audioReference = await generateSmartAudio(targetText, "google", null);
+    } catch (e) {}
+
+    res.status(200).json({
+      success: true,
+      data: {
+        score: typeof evalJson.score === "number" ? evalJson.score : 70,
+        spokenText: evalJson.spokenText || spokenText,
+        targetText: evalJson.targetText || targetText,
+        isCorrect: evalJson.isCorrect ?? (evalJson.score >= 75),
+        phoneticFeedback: evalJson.phoneticFeedback || "Hãy nghe lại mẫu và thử đọc lại rõ ràng hơn nhé!",
+        charAnalysis: evalJson.charAnalysis || [],
+        audioReference: audioReference[0] || null,
+      },
+    });
+  } catch (error: any) {
+    console.error("❌ Lỗi đánh giá phát âm:", error.message);
+    throw new ValidationError(`Lỗi đánh giá phát âm: ${error.message}`);
+  }
+});
+
+/**
  * 💾 HÀM 4: Lưu lịch sử trò chuyện (Save History)
  */
 export const saveHistory = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  console.log("Hàm saveHistory đang được gọi");
   res.status(200).json({ success: true, message: "Đã lưu lịch sử" });
 });
 
 /**
- * 🤖 HÀM 5: Gọi Groq AI ra đề trực diện từ cấu trúc ngữ pháp (Dùng mảng examples[] mới tinh)
+ * 🤖 HÀM 5: Gọi Groq AI ra đề ngữ pháp Tiếng Trung Phồn Thể
  * @route POST /api/chat/generate-direct-grammar-quiz
  */
 export const generateDirectGrammarQuiz = asyncHandler(async (
@@ -365,48 +390,44 @@ export const generateDirectGrammarQuiz = asyncHandler(async (
 ): Promise<void> => {
   const { title, formula, meaning, examples, type } = req.body;
 
-  // Chặn lỗi bọc đầu bằng TypeScript
   if (!title || !meaning) {
-    throw new ValidationError("Thiếu thông tin cấu trúc ngữ pháp để tiến hành ra đề sếp ơi!");
+    throw new ValidationError("Thiếu thông tin cấu trúc ngữ pháp để tạo đề.");
   }
 
-  console.log(`🎲 [Groq AI] Đang soạn đề dạng [${type || "Ngẫu nhiên"}] cho cấu trúc: ${title}`);
-
-  // 🚀 MÃ ĐỘT BIẾN: Vẫn giữ mã này để 6 câu không bao giờ bị trùng lặp nhau
   const randomSeed = Math.random().toString(36).substring(2, 10);
 
   const chatCompletion = await groq.chat.completions.create({
     messages: [
       {
         role: "system",
-        content: `Bạn là một Sensei tiếng Nhật JLPT & BrSE lão luyện.
-        MÃ KHỞI TẠO BỐI CẢNH: [${randomSeed}] - Dùng mã này để sinh ra 1 bối cảnh hoàn toàn ngẫu nhiên.
+        content: `Bạn là Sensei chuyên luyện thi TOCFL & Tiếng Trung Phồn Thể (Traditional Chinese).
+MÃ KHỞI TẠO BỐI CẢNH: [${randomSeed}]
 
-        NHIỆM VỤ: Tạo 1 câu hỏi luyện tập NGẮN GỌN, SÚC TÍCH tập trung 100% vào cấu trúc ngữ pháp sau:
-        - Ngữ pháp: ${title}
-        - Công thức: ${formula || "Chưa có"}
-        - Ý nghĩa: ${meaning}
+NHIỆM VỤ: Tạo 1 câu hỏi luyện tập NGẮN GỌN, SÚC TÍCH về cấu trúc ngữ pháp sau:
+- Ngữ pháp: ${title}
+- Công thức: ${formula || "Chưa có"}
+- Ý nghĩa: ${meaning}
 
-         3 QUY TẮC THÉP TẠO ĐỀ (CÂN BẰNG NGỮ PHÁP & NGỮ CẢNH):
-        1. BÁM SÁT NGỮ PHÁP LÀ SỐ 1: Câu hỏi phải lấy cấu trúc [${title}] làm trung tâm. Cấu trúc câu cần NGẮN GỌN, RÕ RÀNG, đi thẳng vào vấn đề. Tuyệt đối không được nhồi nhét quá nhiều mệnh đề phụ dài dòng làm lu mờ ngữ pháp chính.
-        2. NGỮ CẢNH ĐA DẠNG, THỰC CHIẾN:  Cấm dùng các ví dụ sách giáo khoa trẻ con (như: đi học, ăn táo, xem phim, thời tiết). ✅ HÃY THAY BẰNG từ vựng của người trưởng thành/đi làm: chốt lịch họp, gửi email, đi công tác, báo cáo sếp, đi siêu thị, nhà hàng, kẹt xe, du lịch, v.v. (Nhưng vẫn phải giữ câu ngắn gọn).
-        3. KANJI N5 BẮT BUỘC: CHỈ DÙNG Kanji siêu cơ bản N5 (私, 人, 行, 見, 食, 買, 今, 何...). Mọi từ vựng khó khác BẮT BUỘC viết bằng Hiragana (ví dụ: かいぎ, しゅっちょう, ざんぎょう) để học viên dễ đọc.
+QUY TẮC:
+1. Sử dụng 100% Chữ Hán Phồn Thể (Traditional Chinese / 繁體中文).
+2. Ngữ cảnh đời sống giao tiếp Đài Loan, công sở hoặc du lịch thực chiến.
+3. Thể loại: "${type || "type_cn"}"
+- Nếu "type_cn": 'question' = Câu tiếng Việt, 'correctAnswer' = Câu tiếng Trung Phồn Thể chuẩn kèm Pinyin trong ngoặc.
+- Nếu "translate_vi": 'question' = Câu tiếng Trung Phồn Thể, 'correctAnswer' = Dịch chuẩn nghĩa sang tiếng Việt.
 
-         THỂ LOẠI ĐỀ BẮT BUỘC: "${type || "type_jp"}"
-        - Dạng "type_jp": 'question' = Câu tiếng Việt, 'correctAnswer' = Câu tiếng Nhật tương ứng (Chỉ Kanji N5 + Hiragana).
-        - Dạng "translate_vi": 'question' = Câu tiếng Nhật, 'correctAnswer' = Dịch sát nghĩa sang tiếng Việt.
-
-        CHỈ TRẢ VỀ JSON thuần túy:
-        {
-          "type": "${type || "type_jp"}",
-          "question": "Câu hỏi bám sát ngữ pháp nhưng có từ vựng thực chiến",
-          "correctAnswer": "Đáp án chuẩn mẫu (ngắn gọn, chuẩn ngữ pháp, không chứa khoảng trắng)",
-          "hint": "Gợi ý 1 từ vựng khó hoặc trợ từ quan trọng trong câu bằng Tiếng Việt"
-        }`
+TRẢ VỀ JSON:
+{
+  "type": "${type || "type_cn"}",
+  "question": "Câu hỏi",
+  "correctAnswer": "Đáp án chuẩn",
+  "pinyin": "Pinyin có dấu",
+  "zhuyin": "Chú âm (nếu có)",
+  "hint": "Gợi ý từ vựng hoặc điểm mấu chốt bằng tiếng Việt"
+}`
       }
     ],
     model: "llama-3.3-70b-versatile", 
-    temperature: 0.4, 
+    temperature: 0.3, 
     response_format: { type: "json_object" } 
   });
 
@@ -422,7 +443,7 @@ export const generateDirectGrammarQuiz = asyncHandler(async (
 });
 
 /**
- * 💡 HÀM 6: AI Chatbot gợi ý học tập hàng ngày dựa trên lịch sử hôm qua của User
+ * 💡 HÀM 6: AI Chatbot gợi ý học tập hàng ngày
  * @route GET /api/chat/daily-suggestion
  */
 export const getDailySuggestion = asyncHandler(async (
@@ -431,164 +452,18 @@ export const getDailySuggestion = asyncHandler(async (
 ): Promise<void> => {
   const authReq = req as AuthenticatedRequest;
   if (!authReq.user) {
-    throw new UnauthorizedError("Sếp chưa đăng nhập!");
+    throw new UnauthorizedError("Vui lòng đăng nhập!");
   }
 
-  const userId = authReq.user._id;
-
-  // 1. Tính toán mốc thời gian "ngày hôm qua" (Yesterday)
-  const today = new Date();
-  const startOfYesterday = new Date(today);
-  startOfYesterday.setDate(today.getDate() - 1);
-  startOfYesterday.setHours(0, 0, 0, 0);
-
-  const endOfYesterday = new Date(today);
-  endOfYesterday.setDate(today.getDate() - 1);
-  endOfYesterday.setHours(23, 59, 59, 999);
-
-  console.log(`🔍 [Suggestion] Tìm log từ ${startOfYesterday.toISOString()} đến ${endOfYesterday.toISOString()} cho user ${authReq.user.username}`);
-
-  // 2. Tìm bài học được xem nhiều nhất ngày hôm qua của User
-  const topLog = await StudyLog.aggregate([
-    {
-      $match: {
-        userId: userId,
-        createdAt: { $gte: startOfYesterday, $lte: endOfYesterday },
-      },
-    },
-    {
-      $group: {
-        _id: "$vocabListId",
-        count: { $sum: 1 },
-      },
-    },
-    {
-      $sort: { count: -1 },
-    },
-    {
-      $limit: 1,
-    },
-  ]);
-
-  let suggestedTopic: any = null;
-  let newTopic: any = null;
-  let oldTopicContext = "Chưa có lịch sử học tập hôm qua.";
-  let selectedQuizItem: any = null;
-
-  // Lấy danh sách tất cả các bài học để làm kho gợi ý
   const allTopics = await VocabList.find({}).select("title words grammarPoints");
+  let suggestedTopic = allTopics[0] || null;
 
-  if (topLog && topLog.length > 0) {
-    const topTopicId = topLog[0]._id;
-    suggestedTopic = allTopics.find((t) => t._id.toString() === topTopicId.toString());
-  }
-
-  // Nếu tìm thấy bài học cũ đã học hôm qua
-  if (suggestedTopic) {
-    console.log(`🔥 [Suggestion] Phát hiện bài học cũ xem nhiều nhất: ${suggestedTopic.title}`);
-    
-    // Tạo context từ vựng/ngữ pháp của bài cũ để AI ra đề
-    const wordsText = (suggestedTopic.words || [])
-      .map((w: any) => `${w.term}: ${w.def}`)
-      .join(", ");
-    
-    const grammarText = (suggestedTopic.grammarPoints || [])
-      .map((g: any) => `Cấu trúc: ${g.title} - Nghĩa: ${g.meaning}`)
-      .join("; ");
-
-    oldTopicContext = `Chủ đề: ${suggestedTopic.title}. Từ vựng: [${wordsText}]. Ngữ pháp: [${grammarText}].`;
-
-    // Chọn ngẫu nhiên 1 từ vựng hoặc 1 cấu trúc ngữ pháp để làm Quiz
-    const hasWords = suggestedTopic.words && suggestedTopic.words.length > 0;
-    const hasGrammar = suggestedTopic.grammarPoints && suggestedTopic.grammarPoints.length > 0;
-
-    if (hasWords && (!hasGrammar || Math.random() > 0.5)) {
-      // Chọn từ vựng
-      const randomWord = suggestedTopic.words[Math.floor(Math.random() * suggestedTopic.words.length)];
-      selectedQuizItem = {
-        type: "vocabulary",
-        term: randomWord.term,
-        def: randomWord.def,
-      };
-    } else if (hasGrammar) {
-      // Chọn ngữ pháp
-      const randomGrammar = suggestedTopic.grammarPoints[Math.floor(Math.random() * suggestedTopic.grammarPoints.length)];
-      selectedQuizItem = {
-        type: "grammar",
-        title: randomGrammar.title,
-        meaning: randomGrammar.meaning,
-        formula: randomGrammar.formula || "",
-      };
-    }
-
-    // Tìm bài học mới gợi ý: Chọn bài học tiếp theo (hoặc bài chưa xem)
-    newTopic = allTopics.find(
-      (t) => t._id.toString() !== suggestedTopic._id.toString()
-    );
-  } else {
-    // Nếu hôm qua không học gì, chọn đại 1 bài học cũ ngẫu nhiên trong DB (nếu có) để nhắc nhở ôn tập
-    console.log("💤 [Suggestion] Hôm qua sếp không học gì. Chọn ngẫu nhiên bài ôn tập...");
-    if (allTopics.length > 0) {
-      suggestedTopic = allTopics[Math.floor(Math.random() * allTopics.length)];
-      
-      const wordsText = (suggestedTopic.words || [])
-        .map((w: any) => `${w.term}: ${w.def}`)
-        .join(", ");
-      oldTopicContext = `Chủ đề: ${suggestedTopic.title}. Từ vựng ôn tập: [${wordsText}].`;
-
-      if (suggestedTopic.words && suggestedTopic.words.length > 0) {
-        const randomWord = suggestedTopic.words[Math.floor(Math.random() * suggestedTopic.words.length)];
-        selectedQuizItem = {
-          type: "vocabulary",
-          term: randomWord.term,
-          def: randomWord.def,
-        };
-      }
-      
-      // Gợi ý bài học mới là một bài khác
-      newTopic = allTopics.find(
-        (t) => t._id.toString() !== suggestedTopic._id.toString()
-      );
-    }
-  }
-
-  // Tên bài học mới gợi ý
-  const newTopicTitle = newTopic ? newTopic.title : "Chưa có bài học mới nào khác";
-
-  // 3. Soạn prompt gửi cho Groq LLaMA sinh lời chào và câu hỏi ôn tập
-  const quizPrompt = selectedQuizItem
-    ? `Hãy tạo 1 câu hỏi ôn tập ngắn gọn từ nội dung cũ: ${
-        selectedQuizItem.type === "vocabulary"
-          ? `Từ vựng: "${selectedQuizItem.term}" (nghĩa: "${selectedQuizItem.def}")`
-          : `Ngữ pháp: "${selectedQuizItem.title}" (ý nghĩa: "${selectedQuizItem.meaning}", công thức: "${selectedQuizItem.formula}")`
-      }`
-    : "Yêu cầu học viên học một bài mới.";
-
-  const systemPrompt = `Bạn là nữ nhân vật Emma, trợ lý dạy tiếng Nhật .
-  NHIỆM VỤ: Hãy chào học viên bằng Tiếng Việt cực kỳ thân thiện, thông báo bài học hôm qua họ đã xem nhiều nhất (hoặc nhắc nhở nếu hôm qua họ chưa học) và đề xuất:
-  1. Đưa ra một câu hỏi ôn tập (quiz) nhanh dựa trên bài học cũ để kiểm tra HỌC VIÊN.
-  2. Gợi ý họ nghiên cứu bài học mới ngày hôm nay.
-
-  THÔNG TIN HỌC TẬP:
-  - Bài học hôm qua xem nhiều nhất: ${suggestedTopic ? suggestedTopic.title : "Không học gì"}
-  - Chi tiết ôn tập: [${oldTopicContext}]
-  - Bài học mới gợi ý học hôm nay: ${newTopicTitle}
-  - Câu hỏi ôn tập mục tiêu: [${quizPrompt}]
-
-  YÊU CẦU TRẢ LỜI:
-  - Giữ phong cách Emma vui vẻ, khích lệ học viên, xưng hô là "Emma" và gọi người dùng là "bạn" hoặc "học viên" thân mật (KHÔNG dùng từ "sếp").
-  - Đưa câu hỏi trắc nghiệm hoặc dịch thuật ngắn gọn, rõ ràng ở cuối tin nhắn.
-  - KHÔNG trả về định dạng code markdown dư thừa, chỉ trả về chuỗi text bình thường.`;
+  const systemPrompt = `Bạn là Emma, trợ lý AI dạy Tiếng Trung Phồn Thể. Hãy chào người học thân thiện bằng tiếng Việt, gợi ý 1 từ vựng hoặc mẫu câu Phồn Thể hay hôm nay để họ luyện phát âm và ghi nhớ.`;
 
   const chatCompletion = await groq.chat.completions.create({
-    messages: [
-      {
-        role: "system",
-        content: systemPrompt,
-      },
-    ],
+    messages: [{ role: "system", content: systemPrompt }],
     model: "llama-3.3-70b-versatile",
-    temperature: 0.7,
+    temperature: 0.6,
   });
 
   const aiReply = chatCompletion.choices[0]?.message?.content;
@@ -596,10 +471,6 @@ export const getDailySuggestion = asyncHandler(async (
   res.status(200).json({
     success: true,
     reply: aiReply,
-    suggestedTopic: suggestedTopic
-      ? { id: suggestedTopic._id, title: suggestedTopic.title }
-      : null,
-    newTopic: newTopic ? { id: newTopic._id, title: newTopic.title } : null,
-    quiz: selectedQuizItem,
+    suggestedTopic: suggestedTopic ? { id: suggestedTopic._id, title: suggestedTopic.title } : null,
   });
 });

@@ -41,9 +41,9 @@ export async function generateSmartAudio(
 
   console.log("🔹 Google TTS Processing...");
 
-  // Logic tách câu: Tách các đoạn tiếng Nhật và các đoạn nằm trong ngoặc kép
+  // Logic tách câu: Tách các đoạn chữ Hán / Chú âm Zhuyin, đoạn trong ngoặc kép hoặc đoạn tiếng Việt/Anh
   const regexSplit =
-    /([\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]+|"[^"]+")/g;
+    /([\u3105-\u312f\u31a0-\u31bf\u4e00-\u9fff\u3400-\u4dbf]+|"[^"]+")/g;
   const rawParts = cleanGlobal.split(regexSplit);
   const results = [];
 
@@ -54,13 +54,13 @@ export async function generateSmartAudio(
     const textToDetect = segment.replace(/^"|"$/g, ""); // Bỏ dấu ngoặc kép khi nhận diện ngôn ngữ
     if (!textToDetect) continue;
 
-    let lang = detectLanguage(textToDetect); // Gọi hàm nhận diện Nhật/Việt
+    let lang = detectLanguage(textToDetect); // Nhận diện zh-TW / vi / en
     const safeText = textToDetect.replace(/[:;\-]/g, ", "); // Đổi ký tự ngắt quãng thành dấu phẩy
 
     try {
-      // Google TTS giới hạn 200 ký tự mỗi đoạn, getAllAudioBase64 sẽ tự động chia nhỏ
+      // Google TTS giới hạn 200 ký tự mỗi đoạn
       const googleResults = await googleTTS.getAllAudioBase64(safeText, {
-        lang: lang,
+        lang: lang === "zh-TW" ? "zh-TW" : lang === "vi" ? "vi" : "en",
         slow: false,
         host: "https://translate.google.com.vn",
         timeout: 10000,

@@ -3,21 +3,40 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+let isConnected = false;
+
 const connectDB = async () => {
+  if (isConnected || mongoose.connection.readyState >= 1) {
+    return mongoose.connection;
+  }
+
+  const mongoUri = process.env.MONGODB_URI;
+  if (!mongoUri) {
+    console.warn("⚠️ Cảnh báo: Chưa cấu hình MONGODB_URI trong biến môi trường.");
+    return null;
+  }
+
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI);
+    const conn = await mongoose.connect(mongoUri, {
+      bufferCommands: false,
+      serverSelectionTimeoutMS: 5000,
+    });
+    isConnected = true;
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
     
-    // Tự động gỡ bỏ index unique 'character_1' cũ để sếp thêm trùng kanji thoải mái
+    // Tự động xử lý index nếu cần
     try {
-      await mongoose.connection.db.collection("kanjis").dropIndex("character_1");
-      console.log("✅ Đã gỡ bỏ index unique 'character_1' cũ thành công.");
+      if (mongoose.connection.db) {
+        await mongoose.connection.db.collection("kanjis").dropIndex("character_1").catch(() => {});
+      }
     } catch (e) {
-      // Bỏ qua nếu index không tồn tại hoặc đã gỡ từ trước
+      // Bỏ qua nếu index không tồn tại
     }
+    return conn;
   } catch (error) {
-    console.error(`❌ Error: ${error.message}`);
-    process.exit(1); // Dừng server nếu không kết nối được
+    console.error(`❌ MongoDB Connection Error: ${error.message}`);
+    // Không gọi process.exit(1) để tránh làm sập serverless / container
+    return null;
   }
 };
 

@@ -4,6 +4,7 @@ import express from "express";
 import upload from "../utils/upload.js";
 import {
   transcribe,
+  evaluatePronunciation,
   handleChat,
   saveHistory,
   generateDirectGrammarQuiz,
@@ -18,6 +19,7 @@ router.use(protect);
 
 // AI & Speech Routes
 router.post("/transcribe", upload.single("audio"), transcribe);
+router.post("/evaluate-pronunciation", upload.single("audio"), evaluatePronunciation);
 router.post("/chat", handleChat);
 
 // Daily Study Suggestion Route

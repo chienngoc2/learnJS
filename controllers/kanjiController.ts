@@ -15,17 +15,19 @@ interface ExampleWord {
 interface KanjiItem {
   character: string;
   meaning: string;
-  onyomi: string;
-  kunyomi: string;
+  pinyin?: string;
+  zhuyin?: string;
+  onyomi?: string;
+  kunyomi?: string;
   vietnamese_reading: string;
   level: string;
   components?: string[];
   story?: string;
   lessonGroup?: string;
   stroke_order?: string[];
-  example_words?: ExampleWord[];     // legacy, tổng quát
-  onyomi_examples?: ExampleWord[];   // 3-4 ví dụ âm ON
-  kunyomi_examples?: ExampleWord[];  // 3-4 ví dụ âm KUN
+  example_words?: ExampleWord[];
+  onyomi_examples?: ExampleWord[];
+  kunyomi_examples?: ExampleWord[];
 }
 
 const safeTrim = (val: any): string => {
@@ -36,7 +38,7 @@ const safeTrim = (val: any): string => {
 
 
 // =========================================================================
-// 🔍 1. TÌM KIẾM KANJI
+// 🔍 1. TÌM KIẾM CHỮ HÁN PHỒN THỂ / KANJI
 // @route GET /api/kanji/search?q=一
 // =========================================================================
 export const searchKanji = asyncHandler(async (
@@ -46,7 +48,7 @@ export const searchKanji = asyncHandler(async (
   const q = req.query.q as string;
 
   if (!q) {
-    throw new ValidationError("Thiếu từ khóa tìm kiếm sếp ơi!");
+    throw new ValidationError("Thiếu từ khóa tìm kiếm!");
   }
 
   const queryRegex = new RegExp(q.trim(), "i");
@@ -54,6 +56,8 @@ export const searchKanji = asyncHandler(async (
   const result = await Kanji.findOne({
     $or: [
       { character: q.trim() },
+      { pinyin: queryRegex },
+      { zhuyin: queryRegex },
       { vietnamese_reading: queryRegex },
       { meaning: queryRegex },
     ],
@@ -180,10 +184,12 @@ export const addKanji = asyncHandler(async (
   const newKanji = new Kanji({
     character: body.character.trim(),
     meaning: body.meaning.trim(),
+    pinyin: body.pinyin?.trim() || "",
+    zhuyin: body.zhuyin?.trim() || "",
     onyomi: safeTrim(body.onyomi),
     kunyomi: safeTrim(body.kunyomi),
     vietnamese_reading: body.vietnamese_reading.trim(),
-    level: body.level.trim().toUpperCase(),
+    level: (body.level || "TOCFL A1").trim(),
     stroke_order: body.stroke_order || [],
     example_words: body.example_words || [],
     onyomi_examples: body.onyomi_examples || [],
@@ -197,15 +203,14 @@ export const addKanji = asyncHandler(async (
 
   res.status(201).json({
     success: true,
-    message: `🎉 Đã thêm Kanji "${body.character}" thành công!`,
+    message: `🎉 Đã thêm Chữ Hán "${body.character}" thành công!`,
     data: newKanji,
   });
 });
 
 // =========================================================================
-// 📦 4. THÊM HÀNG LOẠT KANJI - UPSERT (Thêm mới hoặc cập nhật nếu trùng)
+// 📦 4. THÊM HÀNG LOẠT KANJI/HANZI - UPSERT
 // @route POST /api/kanji/bulk-add
-// Body: { items: KanjiItem[], defaultLessonGroup?: string, defaultLevel?: string }
 // =========================================================================
 export const bulkAddKanji = asyncHandler(async (
   req: Request,
@@ -222,7 +227,7 @@ export const bulkAddKanji = asyncHandler(async (
   };
 
   if (!items || !Array.isArray(items) || items.length === 0) {
-    throw new ValidationError("Vui lòng truyền mảng 'items' chứa danh sách Kanji!");
+    throw new ValidationError("Vui lòng truyền mảng 'items' chứa danh sách chữ Hán!");
   }
 
   const results = {
@@ -238,13 +243,13 @@ export const bulkAddKanji = asyncHandler(async (
         continue;
       }
 
-      // Xác định level: ưu tiên item > defaultLevel > "N5"
-      const finalLevel = (item.level?.trim() || defaultLevel?.trim() || "N5").toUpperCase();
-      // Xác định lessonGroup: ưu tiên item > defaultLessonGroup
+      const finalLevel = item.level?.trim() || defaultLevel?.trim() || "TOCFL A1";
       const finalGroup = item.lessonGroup?.trim() || defaultLessonGroup?.trim() || "";
 
       const updateData = {
         meaning: item.meaning.trim(),
+        pinyin: item.pinyin?.trim() || "",
+        zhuyin: item.zhuyin?.trim() || "",
         onyomi: safeTrim(item.onyomi),
         kunyomi: safeTrim(item.kunyomi),
         vietnamese_reading: item.vietnamese_reading.trim(),

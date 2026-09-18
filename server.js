@@ -40,6 +40,11 @@ app.use("/api/vocab", vocabRoute);
 app.use("/api/rag", ragRoutes);
 app.use("/api/kanji", kanjiRoutes);
 
+// Health check endpoint (dùng để FE kiểm tra local có đang chạy không)
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ status: "ok", source: "local" });
+});
+
 // Phục vụ các tệp tĩnh và fallback định tuyến của Frontend khi có thư mục build 'dist'
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

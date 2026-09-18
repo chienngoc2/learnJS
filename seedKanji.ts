@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import fs from "fs";
 import path from "path";
-import Kanji from "./models/Kanji";
+import Kanji from "./models/Kanji.js";
 import dotenv from "dotenv";
 
 dotenv.config();

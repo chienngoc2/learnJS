@@ -288,7 +288,7 @@ export const deleteList = asyncHandler(async (req: Request, res: Response): Prom
   await VocabList.findByIdAndDelete(req.params.id);
 
   // Tự động xóa trên Pinecone
-  deleteVocabListFromPinecone(req.params.id);
+  deleteVocabListFromPinecone(String(req.params.id));
 
   res.json({ success: true, message: "Đã xóa bài học thành công" });
 });
