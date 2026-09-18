@@ -58,6 +58,21 @@ if (fs.existsSync(distPath)) {
     }
     res.sendFile(path.join(distPath, "index.html"));
   });
+} else {
+  app.get("/", (req, res) => {
+    res.status(200).json({
+      message: "🚀 AI Sensei Backend API (Traditional Chinese - 繁體中文) is running!",
+      status: "ok",
+      endpoints: {
+        health: "/api/health",
+        chat: "/api/chat/chat",
+        pronunciation: "/api/chat/evaluate-pronunciation",
+        transcribe: "/api/chat/transcribe",
+        vocab: "/api/vocab/lists",
+        kanji: "/api/kanji/all",
+      },
+    });
+  });
 }
 
 // Global Error Handler Middleware
