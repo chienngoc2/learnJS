@@ -68,7 +68,7 @@ export const generateQuizByTopic = asyncHandler(async (
 
   // 🚀 BƯỚC 3: Trộn dữ liệu linh hoạt vào Prompt gửi cho Gemini 1.5 Flash
   const finalPrompt = `
-    Bạn là Sensei dạy tiếng Nhật. Hãy tạo 1 câu hỏi thực hành sinh động dựa trên thông tin được cung cấp:
+    Bạn là Lão sư (老師) chuyên giảng dạy Tiếng Trung Phồn Thể (繁體中文). Hãy tạo 1 câu hỏi thực hành sinh động dựa trên thông tin được cung cấp:
     - Danh sách từ vựng bổ trợ (Chỉ có nếu chưa có ngữ pháp): [${mongoVocabText}]
     - Cấu trúc ngữ pháp cốt lõi (Ưu tiên hàng đầu từ Pinecone): [${grammarContext}]
     

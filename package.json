@@ -8,7 +8,10 @@
   "scripts": {
     "start": "tsx server.js",
     "dev": "nodemon --exec tsx server.js",
-    "build": "echo 'Build complete'"
+    "build": "echo 'Build complete'",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx tests/fullFeatures.test.js",
+    "test:all": "tsx tests/fullFeatures.test.js"
   },
   "keywords": [],
   "author": "Chien Pham",

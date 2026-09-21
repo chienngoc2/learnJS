@@ -1,0 +1,39 @@
+name: Backend CI/CD Full Features Test
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test-and-verify:
+    name: 🧪 Full Backend Integration & Feature Test
+    runs-on: ubuntu-latest
+
+    env:
+      MONGODB_URI: ${{ secrets.MONGODB_URI || 'mongodb+srv://chien_admin:matkhau123@cluster0.amm5c7v.mongodb.net/learn_chinese?retryWrites=true&w=majority' }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET || 'sensei_ai_secret_key_super_secure' }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY || 'dummy_groq_key' }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || 'dummy_gemini_key' }}
+      PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY || 'dummy_pinecone_key' }}
+      NODE_ENV: test
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+
+      - name: 📦 Install Dependencies
+        run: npm ci || npm install
+
+      - name: 🔍 TypeScript Static Type Checking
+        run: npx tsc --noEmit
+
+      - name: 🚀 Run Full Feature Integration Test Suite
+        run: npm test

@@ -401,7 +401,7 @@ export const generateDirectGrammarQuiz = asyncHandler(async (
     messages: [
       {
         role: "system",
-        content: `Bạn là Sensei chuyên luyện thi TOCFL & Tiếng Trung Phồn Thể (Traditional Chinese).
+        content: `Bạn là Lão sư (老師) chuyên luyện thi TOCFL & Tiếng Trung Phồn Thể (Traditional Chinese / 繁體中文).
 MÃ KHỞI TẠO BỐI CẢNH: [${randomSeed}]
 
 NHIỆM VỤ: Tạo 1 câu hỏi luyện tập NGẮN GỌN, SÚC TÍCH về cấu trúc ngữ pháp sau:
