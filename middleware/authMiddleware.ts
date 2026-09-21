@@ -60,6 +60,40 @@ export const protect = asyncHandler(async (
   }
 });
 
+// 🌐 Middleware xác thực tùy chọn (nếu có token thì gán user, nếu không có thì vẫn cho qua dưới dạng khách)
+export const optionalAuth = asyncHandler(async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  let token: string | undefined;
+
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer")
+  ) {
+    token = req.headers.authorization.split(" ")[1];
+  }
+
+  if (token) {
+    try {
+      const decoded = jwt.verify(
+        token,
+        (process.env.JWT_SECRET || "sensei_ai_secret_key_super_secure") as string
+      ) as DecodedToken;
+
+      const user = await User.findById(decoded.id).select("-password");
+      if (user) {
+        req.user = user;
+      }
+    } catch (error) {
+      // Token không hợp lệ thì coi như khách truy cập
+    }
+  }
+
+  next();
+});
+
 // 🏷️ Middleware phân quyền (chỉ cho phép các role được chỉ định truy cập)
 export const authorize = (...roles: string[]) => {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {

@@ -14,21 +14,21 @@ import {
   updateSingleGrammar,
   getAllGrammarPointsOnly,
 } from "../controllers/vocabController.js";
-import { protect, authorize } from "../middleware/authMiddleware.js";
+import { protect, authorize, optionalAuth } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// 🛡️ Tất cả các route từ vựng bên dưới đều yêu cầu đăng nhập
-router.use(protect);
+// 👥 Routes công khai / đọc danh sách (hỗ trợ cả khách lẫn học viên đã đăng nhập)
+router.get("/lists", optionalAuth, getAllLists);
+router.get("/list/:id", optionalAuth, getListById);
+router.post("/log-view", optionalAuth, logView);
+router.get("/all-grammar-points", optionalAuth, getAllGrammarPointsOnly);
 
-// 👥 Routes dùng chung cho cả Học viên (student) & Admin
-router.get("/lists", getAllLists);
-router.get("/list/:id", getListById);
-router.post("/log-view", logView);
-router.get("/all-grammar-points", getAllGrammarPointsOnly);
-router.post("/save-review", saveReviewList);
+// 🛡️ Routes yêu cầu đăng nhập (Học viên & Admin)
+router.post("/save-review", protect, saveReviewList);
 
 // 👑 Routes chỉ dành riêng cho Admin (quản lý bài học)
+router.use(protect);
 router.use(authorize("admin"));
 
 router.post("/save", createList);
