@@ -99,6 +99,29 @@ if (fs.existsSync(distPath)) {
   });
 }
 
+// 404 Not Found Handler (Trả về JSON rõ ràng thay vì HTML trắng)
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: `Không tìm thấy endpoint: [${req.method}] ${req.originalUrl}`,
+    message: "Route không tồn tại trên Backend Server. Vui lòng kiểm tra lại đường dẫn API.",
+    availableEndpoints: [
+      "/api/health",
+      "/api/auth/register",
+      "/api/auth/login",
+      "/api/vocab/lists",
+      "/api/vocab/list/:id",
+      "/api/vocab/all-grammar-points",
+      "/api/kanji/groups",
+      "/api/kanji/search?q=...",
+      "/api/kanji/list/:groupName",
+      "/api/chat/chat",
+      "/api/chat/generate-direct-grammar-quiz",
+      "/api/rag/quiz",
+    ],
+  });
+});
+
 // Global Error Handler Middleware
 app.use(errorHandler);
 
