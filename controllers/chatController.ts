@@ -451,11 +451,6 @@ export const getDailySuggestion = asyncHandler(async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const authReq = req as AuthenticatedRequest;
-  if (!authReq.user) {
-    throw new UnauthorizedError("Vui lòng đăng nhập!");
-  }
-
   const allTopics = await VocabList.find({}).select("title words grammarPoints");
   let suggestedTopic = allTopics[0] || null;
 

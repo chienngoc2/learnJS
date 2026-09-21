@@ -10,20 +10,20 @@ import {
   generateDirectGrammarQuiz,
   getDailySuggestion,
 } from "../controllers/chatController.js";
-import { protect } from "../middleware/authMiddleware.js";
+import { protect, optionalAuth } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// 🛡️ Tất cả các route chatbot đều yêu cầu đăng nhập
+// 💡 Route gợi ý học tập hàng ngày (hỗ trợ cả khách lẫn user)
+router.get("/daily-suggestion", optionalAuth, getDailySuggestion);
+
+// 🛡️ Tất cả các route chatbot bên dưới đều yêu cầu đăng nhập
 router.use(protect);
 
 // AI & Speech Routes
 router.post("/transcribe", upload.single("audio"), transcribe);
 router.post("/evaluate-pronunciation", upload.single("audio"), evaluatePronunciation);
 router.post("/chat", handleChat);
-
-// Daily Study Suggestion Route
-router.get("/daily-suggestion", getDailySuggestion);
 
 // History & Quiz Routes
 router.post("/save-history", saveHistory);
