@@ -44,15 +44,15 @@ interface AddGrammarReqBody {
 // 🍃 2. CÁC HÀM XỬ LÝ TỪ VỰNG (VOCABULARY CONTROLLERS)
 // =========================================================================
 
-// @desc    Lấy tất cả danh sách bài học
+// @desc    Lấy tất cả danh sách bài học thuộc về tài khoản hiện tại
 // @route   GET /api/vocab/lists
 export const getAllLists = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const authReq = req as AuthenticatedRequest;
   const userId = authReq.user?._id;
   
-  // Lấy các bài học do user tạo hoặc bài học mặc định của hệ thống (không có userId)
+  // Mỗi tài khoản liên kết với các bộ bài học do chính tài khoản đó tạo
   const query = userId 
-    ? { $or: [{ userId }, { userId: { $exists: false } }, { userId: null }] }
+    ? { userId }
     : { $or: [{ userId: { $exists: false } }, { userId: null }] };
 
   const lists = await VocabList.find(query)
@@ -332,8 +332,15 @@ export const addOrUpdateGrammar = asyncHandler(async (
     topicName: gp.topicName || cleanTopicName
   }));
 
-  // 1. Tìm xem bài học đã tồn tại chưa
-  const existingList = await VocabList.findOne({ title: cleanTopicName });
+  const authReq = req as AuthenticatedRequest;
+  const userId = authReq.user?._id;
+
+  // 1. Tìm xem bài học đã tồn tại của chính user đó chưa
+  const query = userId 
+    ? { title: cleanTopicName, userId: userId } 
+    : { title: cleanTopicName, $or: [{ userId: { $exists: false } }, { userId: null }] };
+
+  const existingList = await VocabList.findOne(query);
 
   if (existingList) {
     // TRƯỜNG HỢP 1: Tồn tại -> Chỉ cần Push thêm vào mảng cũ
@@ -350,11 +357,12 @@ export const addOrUpdateGrammar = asyncHandler(async (
       message: "Đã thêm ngữ pháp vào bài học hiện có!" 
     });
   } else {
-    // TRƯỜNG HỢP 2: Chưa tồn tại -> Tạo mới hoàn toàn
+    // TRƯỜNG HỢP 2: Chưa tồn tại -> Tạo mới hoàn toàn gắn với userId
     const newList = new VocabList({
       title: cleanTopicName,
       grammarPoints: normalizedGrammarPoints,
-      words: [] // Khởi tạo mảng trống để không vi phạm Schema (nếu có yêu cầu)
+      words: [],
+      userId: userId || undefined
     });
     
     await newList.save();
@@ -459,9 +467,15 @@ export const deleteSingleGrammar = asyncHandler(async (req: Request, res: Respon
 // @desc    Bốc tổng kho ngữ pháp siêu nhẹ trả về trang luyện tập (Chặn đứng words)
 // @route   GET /api/vocab/all-grammar-points
 export const getAllGrammarPointsOnly = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  console.log("📥 [API] Đang quét tổng kho ngữ pháp tối ưu...");
+  const authReq = req as AuthenticatedRequest;
+  const userId = authReq.user?._id;
+  console.log(`📥 [API] Đang quét tổng kho ngữ pháp cho user [${userId || "Khách"}]...`);
 
-  const rawLists = await VocabList.find({}).select("title grammarPoints");
+  const query = userId 
+    ? { userId } 
+    : { $or: [{ userId: { $exists: false } }, { userId: null }] };
+
+  const rawLists = await VocabList.find(query).select("title grammarPoints userId");
   const flattenedGrammars: any[] = [];
 
   rawLists.forEach((topic) => {
