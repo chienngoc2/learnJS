@@ -1,13 +1,17 @@
-// File: controllers/vocabController.ts
-
 import type { Request, Response } from "express";
 import mongoose from "mongoose";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import VocabList from "../models/VocabList.js";
 import StudyLog from "../models/StudyLog.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { NotFoundError, ValidationError, UnauthorizedError } from "../utils/errors.js";
 import { AuthenticatedRequest } from "../middleware/authMiddleware.js";
 import { syncVocabListToPinecone, deleteVocabListFromPinecone } from "../utils/ragSync.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // =========================================================================
 // 📦 1. ĐỊNH NGHĨA CÁC INTERFACES (Gom lên đầu trang, chuẩn hóa examples[])
@@ -482,5 +486,20 @@ export const getAllGrammarPointsOnly = asyncHandler(async (req: Request, res: Re
   res.status(200).json({
     success: true,
     data: flattenedGrammars,
+  });
+});
+
+// @desc    Lấy toàn bộ từ điển/kho từ vựng chung (Master Vocab JSON)
+// @route   GET /api/vocab/master
+export const getMasterVocab = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const masterPath = path.join(__dirname, "../data/vocab_master.json");
+  if (!fs.existsSync(masterPath)) {
+    throw new NotFoundError("Chưa khởi tạo kho từ vựng master JSON.");
+  }
+  const content = fs.readFileSync(masterPath, "utf-8");
+  const parsed = JSON.parse(content);
+  res.json({
+    success: true,
+    data: parsed,
   });
 });

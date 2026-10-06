@@ -18,27 +18,41 @@ const generateToken = (id: string, role: string): string => {
   );
 };
 
-// @desc    Đăng ký người dùng mới
+// @desc    Đăng ký người dùng mới (chỉ cần email và mật khẩu)
 // @route   POST /api/auth/register
 // @access  Public
 export const register = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const { username, password, role } = req.body;
+  const { email, username, password, role } = req.body;
+  const rawEmail = (email || username || "").toString().trim().toLowerCase();
 
-  if (!username || !password) {
-    throw new ValidationError("Vui lòng điền đầy đủ tài khoản và mật khẩu!");
+  if (!rawEmail || !password) {
+    throw new ValidationError("Vui lòng điền đầy đủ email và mật khẩu!");
   }
 
-  // Kiểm tra tài khoản đã tồn tại chưa
-  const userExists = await User.findOne({ username: username.toLowerCase() });
+  // Kiểm tra định dạng email cơ bản
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(rawEmail)) {
+    throw new ValidationError("Email không hợp lệ! Vui lòng nhập đúng định dạng email (VD: name@example.com).");
+  }
+
+  if (password.length < 6) {
+    throw new ValidationError("Mật khẩu phải từ 6 ký tự trở lên!");
+  }
+
+  // Kiểm tra email / tài khoản đã tồn tại chưa
+  const userExists = await User.findOne({
+    $or: [{ email: rawEmail }, { username: rawEmail }],
+  });
   if (userExists) {
-    throw new ConflictError("Tên tài khoản này đã được sử dụng sếp ơi!");
+    throw new ConflictError("Email này đã được sử dụng rồi sếp ơi!");
   }
 
   // Đăng ký user mới (mật khẩu tự động mã hóa nhờ mongoose hook)
   const user = await User.create({
-    username: username.toLowerCase(),
+    email: rawEmail,
+    username: rawEmail,
     password,
-    role: role || "student", // Mặc định là học viên nếu không truyền
+    role: role || "student",
   });
 
   const token = generateToken(user._id.toString(), user.role);
@@ -49,32 +63,37 @@ export const register = asyncHandler(async (req: Request, res: Response): Promis
     token,
     user: {
       id: user._id,
+      email: user.email,
       username: user.username,
       role: user.role,
     },
   });
 });
 
-// @desc    Đăng nhập người dùng
+// @desc    Đăng nhập người dùng (bằng email hoặc username)
 // @route   POST /api/auth/login
 // @access  Public
 export const login = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const { username, password } = req.body;
+  const { email, username, password } = req.body;
+  const identifier = (email || username || "").toString().trim().toLowerCase();
 
-  if (!username || !password) {
-    throw new ValidationError("Vui lòng điền đầy đủ tài khoản và mật khẩu!");
+  if (!identifier || !password) {
+    throw new ValidationError("Vui lòng điền đầy đủ email và mật khẩu!");
   }
 
-  // Tìm user theo username
-  const user = await User.findOne({ username: username.toLowerCase() });
+  // Tìm user theo email hoặc username
+  const user = await User.findOne({
+    $or: [{ email: identifier }, { username: identifier }],
+  });
+
   if (!user) {
-    throw new UnauthorizedError("Tài khoản hoặc mật khẩu không chính xác sếp ơi!");
+    throw new UnauthorizedError("Email hoặc mật khẩu không chính xác sếp ơi!");
   }
 
   // Kiểm tra mật khẩu
   const isMatch = await user.matchPassword(password);
   if (!isMatch) {
-    throw new UnauthorizedError("Tài khoản hoặc mật khẩu không chính xác sếp ơi!");
+    throw new UnauthorizedError("Email hoặc mật khẩu không chính xác sếp ơi!");
   }
 
   const token = generateToken(user._id.toString(), user.role);
@@ -85,7 +104,8 @@ export const login = asyncHandler(async (req: Request, res: Response): Promise<v
     token,
     user: {
       id: user._id,
-      username: user.username,
+      email: user.email || user.username,
+      username: user.username || user.email,
       role: user.role,
     },
   });
@@ -103,7 +123,8 @@ export const getMe = asyncHandler(async (req: AuthenticatedRequest, res: Respons
     success: true,
     user: {
       id: req.user._id,
-      username: req.user.username,
+      email: req.user.email || req.user.username,
+      username: req.user.username || req.user.email,
       role: req.user.role,
       createdAt: req.user.createdAt,
     },

@@ -1,0 +1,3739 @@
+{
+  "title": "Kho Từ Vựng Chung (Đương Đại 1 - TOCFL A1/A2)",
+  "total": 533,
+  "level": "TOCFL A1-A2",
+  "description": "Bộ từ vựng giáo trình tiếng Trung Phồn Thể Đương Đại & Giao tiếp thường dùng",
+  "words": [
+    {
+      "word": "陳月美",
+      "pinyin": "Chényuèměi",
+      "meaning": "Trần Nguyệt Mỹ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "李明華",
+      "pinyin": "lǐmínghuá",
+      "meaning": "Lý Minh Hoa",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "王開文",
+      "pinyin": "wángkāiwén",
+      "meaning": "Vương Khải Văn",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "你",
+      "pinyin": "nǐ",
+      "meaning": "bạn",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "來",
+      "pinyin": "lái",
+      "meaning": "đến, tới",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "是",
+      "pinyin": "shì",
+      "meaning": "là",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "小姐",
+      "pinyin": "xiǎojiě",
+      "meaning": "cô, chị",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "嗎",
+      "pinyin": "ma",
+      "meaning": "phải không",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "接",
+      "pinyin": "jiē",
+      "meaning": "đón",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "我們",
+      "pinyin": "wǒmen",
+      "meaning": "chúng tôi",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "我",
+      "pinyin": "wǒ",
+      "meaning": "tôi",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "這",
+      "pinyin": "zhè / zhèi",
+      "meaning": "đây, này",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "先生",
+      "pinyin": "xiānshēng",
+      "meaning": "ông, ngài, anh",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "好",
+      "pinyin": "hǎo",
+      "meaning": "tốt",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "姓",
+      "pinyin": "xìng",
+      "meaning": "họ (tên)",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "叫",
+      "pinyin": "jiào",
+      "meaning": "gọi",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "你們",
+      "pinyin": "nǐmen",
+      "meaning": "các bạn",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "臺灣",
+      "pinyin": "táiwān",
+      "meaning": "Đài Loan",
+      "level": "TOCFL A1",
+      "notes": "Dạng giản thể/dị thể: 台灣"
+    },
+    {
+      "word": "歡迎",
+      "pinyin": "huānyíng",
+      "meaning": "hoan nghênh",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "請問",
+      "pinyin": "qǐngwèn",
+      "meaning": "cho hỏi",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "是的",
+      "pinyin": "shì de",
+      "meaning": "đúng, vâng",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "謝謝",
+      "pinyin": "xièxiè",
+      "meaning": "cảm ơn",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "不客氣",
+      "pinyin": "bù kèqì",
+      "meaning": "đừng khách sáo",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "你好",
+      "pinyin": "nǐ",
+      "meaning": "hǎo xin chào",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "請",
+      "pinyin": "Qǐng",
+      "meaning": "mời, vui lòng",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "喝",
+      "pinyin": "Hē",
+      "meaning": "uống",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "茶",
+      "pinyin": "chá",
+      "meaning": "trà",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "很",
+      "pinyin": "hěn",
+      "meaning": "rất",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "好喝",
+      "pinyin": "hǎo",
+      "meaning": "hē uống ngon",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "什麼",
+      "pinyin": "shénme",
+      "meaning": "gì, cái gì",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "人",
+      "pinyin": "rén",
+      "meaning": "người",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "喜歡",
+      "pinyin": "xǐhuān",
+      "meaning": "thích, yêu thích",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "呢",
+      "pinyin": "ne",
+      "meaning": "vậy, thì sao",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "他",
+      "pinyin": "tā anh",
+      "meaning": "ấy",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "不",
+      "pinyin": "bù",
+      "meaning": "không",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "哪",
+      "pinyin": "nǎ",
+      "meaning": "nào",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "要",
+      "pinyin": "yào",
+      "meaning": "muốn, cần, phải",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "咖啡",
+      "pinyin": "kāfēi",
+      "meaning": "coffee",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "烏龍茶",
+      "pinyin": "wūlóngchá",
+      "meaning": "trà Olong",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "日本",
+      "pinyin": "rìběn",
+      "meaning": "Nhật Bản",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "美國",
+      "pinyin": "měiguó",
+      "meaning": "Mỹ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "對不起",
+      "pinyin": "duìbùqǐ",
+      "meaning": "xin lỗi",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "哪國",
+      "pinyin": "nǎ",
+      "meaning": "guó nước nào?",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "張怡君",
+      "pinyin": "Zhāngyíjūn",
+      "meaning": "Trương Nghị Quân",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "馬安同",
+      "pinyin": "mǎ",
+      "meaning": "ān tóng Mã An Đồng",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "的",
+      "pinyin": "de",
+      "meaning": "của",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "家人",
+      "pinyin": "jiā",
+      "meaning": "rén người nhà",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "家",
+      "pinyin": "jiā",
+      "meaning": "nhà",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "漂亮",
+      "pinyin": "piàoliang",
+      "meaning": "đẹp, xinh đẹp",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "房子",
+      "pinyin": "fángzi",
+      "meaning": "căn nhà",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "坐",
+      "pinyin": "zuò",
+      "meaning": "ngồi",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "有",
+      "pinyin": "yǒu",
+      "meaning": "có",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "多",
+      "pinyin": "duō",
+      "meaning": "nhiều, hơn",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "照片",
+      "pinyin": "zhàopiàn",
+      "meaning": "bức ảnh",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "都",
+      "pinyin": "dōu",
+      "meaning": "đều, cũng",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "照相",
+      "pinyin": "zhàoxiàng",
+      "meaning": "chụp ảnh",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "張",
+      "pinyin": "zhāng",
+      "meaning": "tấm (lượng từ)",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "好看",
+      "pinyin": "hǎokàn",
+      "meaning": "đẹp",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "誰",
+      "pinyin": "shéi",
+      "meaning": "ai",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "姐姐",
+      "pinyin": "jiějiě",
+      "meaning": "chị gái",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "妹妹",
+      "pinyin": "mèimei",
+      "meaning": "em gái",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "爸爸",
+      "pinyin": "bàba",
+      "meaning": "ba",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "媽媽",
+      "pinyin": "māmā",
+      "meaning": "mẹ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "請進",
+      "pinyin": "qǐng",
+      "meaning": "jìn mời vào",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "田中誠一",
+      "pinyin": "tiánzhōng chéng yī",
+      "meaning": "Điền Trung Thành Nhất",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "伯母",
+      "pinyin": "bómǔ",
+      "meaning": "dì",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "您",
+      "pinyin": "nín",
+      "meaning": "bạn, ông, ngài (trang trọng)",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "名字",
+      "pinyin": "míngzì",
+      "meaning": "tên",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "書",
+      "pinyin": "shū",
+      "meaning": "sách",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "哥哥",
+      "pinyin": "gēgē",
+      "meaning": "anh trai",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "老師",
+      "pinyin": "lǎoshī",
+      "meaning": "giáo viên, thầy giáo, cô giáo",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "看書",
+      "pinyin": "kànshū",
+      "meaning": "đọc sách",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "幾",
+      "pinyin": "jǐ",
+      "meaning": "mấy",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "個",
+      "pinyin": "gè",
+      "meaning": "cái (lượng từ)",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "沒",
+      "pinyin": "méi",
+      "meaning": "không, chưa",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "兄弟",
+      "pinyin": "xiōngdì huynh",
+      "meaning": "đệ, anh em",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "姐妹",
+      "pinyin": "jiěmèi",
+      "meaning": "tỉ muội, chị em",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "五",
+      "pinyin": "wǔ",
+      "meaning": "số 5",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "兩",
+      "pinyin": "liǎng",
+      "meaning": "số lượng 2",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "週末",
+      "pinyin": "Zhōumò",
+      "meaning": "cuối tuần",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "聽",
+      "pinyin": "tīng",
+      "meaning": "nghe",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "音樂",
+      "pinyin": "yīnyuè",
+      "meaning": "âm nhạc",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "運動",
+      "pinyin": "yùndòng",
+      "meaning": "vận động, thể thao",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "打",
+      "pinyin": "dǎ",
+      "meaning": "đánh",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "網球",
+      "pinyin": "wǎngqiú",
+      "meaning": "quần vợt",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "棒球",
+      "pinyin": "bàngqiú",
+      "meaning": "bóng chày",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "和",
+      "pinyin": "hé",
+      "meaning": "và",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "游泳",
+      "pinyin": "yóuyǒng",
+      "meaning": "bơi lội",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "常",
+      "pinyin": "cháng",
+      "meaning": "thường",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "籃球",
+      "pinyin": "lánqiú",
+      "meaning": "bóng rổ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "也",
+      "pinyin": "yě",
+      "meaning": "cũng",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "踢",
+      "pinyin": "tī",
+      "meaning": "đá",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "足球",
+      "pinyin": "zúqiú bóng",
+      "meaning": "đá",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "覺得",
+      "pinyin": "juédé",
+      "meaning": "cảm thấy",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "好玩",
+      "pinyin": "hǎowán",
+      "meaning": "chơi vui",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "明天",
+      "pinyin": "míngtiān",
+      "meaning": "ngày mai",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "早上",
+      "pinyin": "zǎoshang",
+      "meaning": "buổi sáng",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "去",
+      "pinyin": "qù",
+      "meaning": "đi",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "怎麼樣",
+      "pinyin": "zěnme",
+      "meaning": "yàng như thế nào",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "啊",
+      "pinyin": "a",
+      "meaning": "a",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "做什麼",
+      "pinyin": "zuò",
+      "meaning": "shénme làm gì, làm cái gì",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "好啊",
+      "pinyin": "hǎo",
+      "meaning": "a OK",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "白如玉",
+      "pinyin": "báirúyù",
+      "meaning": "Bạch Như Ý",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "今天",
+      "pinyin": "jīntiān",
+      "meaning": "hôm nay",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "晚上",
+      "pinyin": "wǎnshàng",
+      "meaning": "buổi tối",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "看",
+      "pinyin": "kàn",
+      "meaning": "nhìn, xem, đọc",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "電影",
+      "pinyin": "diànyǐng",
+      "meaning": "phim (rạp)",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "妳",
+      "pinyin": "nǐ",
+      "meaning": "bạn",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "想",
+      "pinyin": "xiǎng",
+      "meaning": "muốn, tưởng, nghỉ, nhớ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "還是",
+      "pinyin": "háishì",
+      "meaning": "hay là",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "吧",
+      "pinyin": "ba",
+      "meaning": "nha, nhé / phải không?",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "可以",
+      "pinyin": "kěyǐ",
+      "meaning": "có thể",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "學",
+      "pinyin": "xué",
+      "meaning": "học",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "中文",
+      "pinyin": "zhōngwén",
+      "meaning": "Trung văn, tiếng Trung",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "一起",
+      "pinyin": "yīqǐ",
+      "meaning": "cùng nhau",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "吃",
+      "pinyin": "chī",
+      "meaning": "ăn",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "晚飯",
+      "pinyin": "wǎnfàn",
+      "meaning": "bữa tối",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "菜",
+      "pinyin": "cài món",
+      "meaning": "ăn, rau",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "越南",
+      "pinyin": "yuènán",
+      "meaning": "Việt Nam",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "好不好",
+      "pinyin": "hǎobù hǎo",
+      "meaning": "được không",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "一共",
+      "pinyin": "Yígòng",
+      "meaning": "tổng cộng",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "多少",
+      "pinyin": "duōshǎo",
+      "meaning": "bao nhiêu",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "錢",
+      "pinyin": "qián",
+      "meaning": "tiền",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "老闆",
+      "pinyin": "lǎobǎn",
+      "meaning": "ông chủ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "買",
+      "pinyin": "mǎi",
+      "meaning": "mua",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "杯",
+      "pinyin": "bēi",
+      "meaning": "ly",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "熱",
+      "pinyin": "rè",
+      "meaning": "nóng",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "包子",
+      "pinyin": "bāozi",
+      "meaning": "bánh bao",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "大",
+      "pinyin": "dà",
+      "meaning": "lớn",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "中",
+      "pinyin": "zhōng",
+      "meaning": "giữa, trung",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "小",
+      "pinyin": "xiǎo",
+      "meaning": "nhỏ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "幫",
+      "pinyin": "bāng",
+      "meaning": "giúp",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "微波",
+      "pinyin": "wéibō",
+      "meaning": "lò viba",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "百",
+      "pinyin": "bǎi",
+      "meaning": "trăm",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "塊",
+      "pinyin": "kuài",
+      "meaning": "đồng, miếng, viên",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "好的",
+      "pinyin": "hǎo",
+      "meaning": "de ok",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "外帶",
+      "pinyin": "wài dài mang",
+      "meaning": "đi",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "內用",
+      "pinyin": "nèi",
+      "meaning": "yòng dùng tại chỗ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "支",
+      "pinyin": "zhī",
+      "meaning": "cành, chiếc, cái",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "新",
+      "pinyin": "xīn",
+      "meaning": "mới",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "手機",
+      "pinyin": "shǒujī",
+      "meaning": "điện thoại",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "太",
+      "pinyin": "tài",
+      "meaning": "quá, lắm",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "舊",
+      "pinyin": "jiù",
+      "meaning": "cũ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "了",
+      "pinyin": "le",
+      "meaning": "rồi, nữa",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "種",
+      "pinyin": "zhǒng",
+      "meaning": "loại",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "能",
+      "pinyin": "néng",
+      "meaning": "có thể (chỉ năng lực)",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "上網",
+      "pinyin": "shàngwǎng",
+      "meaning": "lên mạng",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "那",
+      "pinyin": "nà",
+      "meaning": "kia, đó",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "貴",
+      "pinyin": "guì",
+      "meaning": "đắc tiền",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "賣",
+      "pinyin": "mài",
+      "meaning": "bán",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "便宜",
+      "pinyin": "piányí",
+      "meaning": "rẻ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "萬",
+      "pinyin": "wàn",
+      "meaning": "vạn",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "千",
+      "pinyin": "qiān",
+      "meaning": "nghìn",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "為什麼",
+      "pinyin": "wèishénme",
+      "meaning": "tại sao?",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "牛肉",
+      "pinyin": "Niúròu",
+      "meaning": "thịt bò",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "麵",
+      "pinyin": "miàn",
+      "meaning": "mì",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "真",
+      "pinyin": "zhēn",
+      "meaning": "thật",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "好吃",
+      "pinyin": "hào",
+      "meaning": "chī ngon",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "說",
+      "pinyin": "shuō",
+      "meaning": "nói",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "少",
+      "pinyin": "shǎo",
+      "meaning": "it",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "有名",
+      "pinyin": "yǒumíng",
+      "meaning": "nổi tiếng",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "小吃",
+      "pinyin": "xiǎochī",
+      "meaning": "snack",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "最",
+      "pinyin": "zuì",
+      "meaning": "nhất",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "湯",
+      "pinyin": "tāng",
+      "meaning": "canh",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "這麼",
+      "pinyin": "zhème",
+      "meaning": "như vậy",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "知道",
+      "pinyin": "zhīdào",
+      "meaning": "biết",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "家",
+      "pinyin": "jiā",
+      "meaning": "(M) cái (cửa hàng)",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "店",
+      "pinyin": "diàn",
+      "meaning": "tiệm",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "一定",
+      "pinyin": "yīdìng",
+      "meaning": "nhất định",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "點",
+      "pinyin": "diǎn",
+      "meaning": "giờ, gọi món",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "碗",
+      "pinyin": "wǎn",
+      "meaning": "chén",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "是啊",
+      "pinyin": "shì a",
+      "meaning": "đúng vậy",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "小籠包",
+      "pinyin": "xiǎo",
+      "meaning": "lóng bāo tiểu long bao",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "臭豆腐",
+      "pinyin": "chòu dòufu",
+      "meaning": "đậu hủ thúi",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "太好了",
+      "pinyin": "tài",
+      "meaning": "hǎole tốt quá",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "昨天",
+      "pinyin": "zuótiān",
+      "meaning": "hôm qua",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "餐廳",
+      "pinyin": "cāntīng",
+      "meaning": "căn tin, nhà hàng",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "可是",
+      "pinyin": "kěshì",
+      "meaning": "nhưng mà",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "辣",
+      "pinyin": "là",
+      "meaning": "cay",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "怕",
+      "pinyin": "pà",
+      "meaning": "sợ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "所以",
+      "pinyin": "suǒyǐ",
+      "meaning": "vì vậy",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "自己",
+      "pinyin": "zìjǐ",
+      "meaning": "bản thân, tự",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "做飯",
+      "pinyin": "zuò",
+      "meaning": "fàn nấu cơm",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "得",
+      "pinyin": "de",
+      "meaning": "(trợ từ)",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "會",
+      "pinyin": "huì",
+      "meaning": "sẽ, biết, có thể",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "甜點",
+      "pinyin": "tiándiǎn",
+      "meaning": "tráng miệng",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "不錯",
+      "pinyin": "bùcuò",
+      "meaning": "không tệ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "可以",
+      "pinyin": "kěyǐ",
+      "meaning": "có thể (chỉ năng lực, cho phép)",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "教",
+      "pinyin": "jiào",
+      "meaning": "dạy",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "到",
+      "pinyin": "dào",
+      "meaning": "đến",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "有一點",
+      "pinyin": "yǒu",
+      "meaning": "yīdiǎn hơi, khá",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "不好",
+      "pinyin": "bù",
+      "meaning": "hǎo ko tốt",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "他們",
+      "pinyin": "Tāmen",
+      "meaning": "Họ, bọn họ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "學校",
+      "pinyin": "xuéxiào",
+      "meaning": "trường học",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "在",
+      "pinyin": "zài",
+      "meaning": "ở, tại",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "山上",
+      "pinyin": "shānshàng",
+      "meaning": "trên núi",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "哪裡",
+      "pinyin": "nǎlǐ",
+      "meaning": "ở đâu, ở chỗ nào",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "遠",
+      "pinyin": "yuǎn",
+      "meaning": "xa",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "那裡",
+      "pinyin": "nàlǐ",
+      "meaning": "ở kia, ở chỗ đó",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "風景",
+      "pinyin": "fēngjǐng",
+      "meaning": "phong cảnh",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "美",
+      "pinyin": "měi",
+      "meaning": "đẹp",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "前面",
+      "pinyin": "qiánmiàn",
+      "meaning": "phía trước",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "海",
+      "pinyin": "hǎi",
+      "meaning": "biển",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "後面",
+      "pinyin": "hòumiàn",
+      "meaning": "phía sau",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "山",
+      "pinyin": "shān",
+      "meaning": "núi",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "真的",
+      "pinyin": "zhēn",
+      "meaning": "de thật",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "地方",
+      "pinyin": "dìfāng",
+      "meaning": "địa phương, nơi, chỗ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "現在",
+      "pinyin": "xiànzài",
+      "meaning": "bây giờ, hiện tại",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "附近",
+      "pinyin": "fùjìn",
+      "meaning": "gần",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "樓下",
+      "pinyin": "lóu",
+      "meaning": "xià dưới lầu",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "找",
+      "pinyin": "zhǎo",
+      "meaning": "tìm, kiếm",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "朋友",
+      "pinyin": "péngyǒu",
+      "meaning": "bạn bè",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "上課",
+      "pinyin": "shàngkè",
+      "meaning": "lên lớp",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "花蓮",
+      "pinyin": "huālián",
+      "meaning": "Hoa Liên",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "聽說",
+      "pinyin": "tīng",
+      "meaning": "shuō nghe nói",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "近",
+      "pinyin": "jìn",
+      "meaning": "gần",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "方便",
+      "pinyin": "fāngbiàn",
+      "meaning": "thuận tiện, tiện lợi",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "這裡",
+      "pinyin": "zhèlǐ",
+      "meaning": "ở đây, ở chỗ này",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "學生",
+      "pinyin": "xuéshēng",
+      "meaning": "học sinh",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "東西",
+      "pinyin": "dōngxī",
+      "meaning": "đồ đạc, đồ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "外面",
+      "pinyin": "wàimiàn",
+      "meaning": "bên ngoài",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "裡面",
+      "pinyin": "lǐmiàn",
+      "meaning": "bên trong",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "商店",
+      "pinyin": "shāngdiàn",
+      "meaning": "cửa hàng",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "吃飯",
+      "pinyin": "chīfàn",
+      "meaning": "ăn cơm",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "宿舍",
+      "pinyin": "sùshè",
+      "meaning": "kí túc xá",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "樓",
+      "pinyin": "lóu",
+      "meaning": "lầu, toà nhà",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "棟",
+      "pinyin": "dòng",
+      "meaning": "lượng từ (tòa nhà)",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "大樓",
+      "pinyin": "dàlóu",
+      "meaning": "tòa nhà lớn",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "圖書館",
+      "pinyin": "túshū",
+      "meaning": "guǎn thư viện",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "旁邊",
+      "pinyin": "pángbiān",
+      "meaning": "bên cạnh",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "教室",
+      "pinyin": "jiàoshì",
+      "meaning": "lớp học",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "游泳池",
+      "pinyin": "yóuyǒngchí",
+      "meaning": "hồ bơi",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "點",
+      "pinyin": "Diǎn",
+      "meaning": "giờ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "唱歌",
+      "pinyin": "chànggē",
+      "meaning": "ca, hát",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "分",
+      "pinyin": "fēn",
+      "meaning": "phút",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "從",
+      "pinyin": "cóng",
+      "meaning": "từ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "見面",
+      "pinyin": "jiànmiàn",
+      "meaning": "gặp mặt",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "中午",
+      "pinyin": "zhōngwǔ",
+      "meaning": "buổi trưa",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "得",
+      "pinyin": "dé /",
+      "meaning": "děi phải",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "銀行",
+      "pinyin": "yínháng",
+      "meaning": "ngân hàng",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "時候",
+      "pinyin": "shíhòu",
+      "meaning": "khi, lúc",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "後天",
+      "pinyin": "hòutiān",
+      "meaning": "ngày mốt",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "大安",
+      "pinyin": "dà'ān",
+      "meaning": "Đại An",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "下次",
+      "pinyin": "xià",
+      "meaning": "cì lần sau",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "沒問題",
+      "pinyin": "méi",
+      "meaning": "wèntí không thành vấn đề",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "對了",
+      "pinyin": "duìle",
+      "meaning": "đúng rồi",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "有空",
+      "pinyin": "yǒu",
+      "meaning": "kòng có thời gian rảnh",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "再見",
+      "pinyin": "zàijiàn",
+      "meaning": "tạm biệt",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "在",
+      "pinyin": "zài",
+      "meaning": "đang",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "午餐",
+      "pinyin": "wǔcān",
+      "meaning": "bữa trưa",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "剛",
+      "pinyin": "gāng",
+      "meaning": "vừa mới",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "下課",
+      "pinyin": "xiàkè",
+      "meaning": "tan học",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "下午",
+      "pinyin": "xiàwǔ",
+      "meaning": "buổi chiều",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "半",
+      "pinyin": "bàn",
+      "meaning": "1 nửa",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "比賽",
+      "pinyin": "bǐsài",
+      "meaning": "trận đấu, cuộc thi",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "結束",
+      "pinyin": "jiéshù",
+      "meaning": "kết thúc",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "最近",
+      "pinyin": "zuìjìn",
+      "meaning": "gần đây, dạo này",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "忙",
+      "pinyin": "máng",
+      "meaning": "bận",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "每",
+      "pinyin": "měi",
+      "meaning": "mỗi",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "天",
+      "pinyin": "tiān",
+      "meaning": "ngày",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "書法",
+      "pinyin": "shūfǎ",
+      "meaning": "thư pháp",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "課",
+      "pinyin": "kè",
+      "meaning": "lớp",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "開始",
+      "pinyin": "kāishǐ",
+      "meaning": "bắt đầu",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "字",
+      "pinyin": "zì",
+      "meaning": "từ, từ ngữ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "寫",
+      "pinyin": "xiě",
+      "meaning": "viết",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "問",
+      "pinyin": "wèn",
+      "meaning": "hỏi",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "等一下",
+      "pinyin": "děng",
+      "meaning": "yīxià chờ 1 chút, đợi 1 chút",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "有事",
+      "pinyin": "yǒushì",
+      "meaning": "có việc",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "有意思",
+      "pinyin": "yǒuyìsi",
+      "meaning": "thú vị, hấp dẫn",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "火車",
+      "pinyin": "huǒchē",
+      "meaning": "xe lửa, tàu hỏa",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "跟",
+      "pinyin": "gēn",
+      "meaning": "cùng, với",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "玩",
+      "pinyin": "wán",
+      "meaning": "chơi",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "怎麼",
+      "pinyin": "zěnme",
+      "meaning": "làm sao, tại sao, như thế nào",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "慢",
+      "pinyin": "màn",
+      "meaning": "chậm",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "鐘頭",
+      "pinyin": "zhōngtóu",
+      "meaning": "giờ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "比較",
+      "pinyin": "bǐjiào",
+      "meaning": "tương đối",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "快",
+      "pinyin": "kuài",
+      "meaning": "nhanh",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "車票",
+      "pinyin": "chēpiào",
+      "meaning": "vé xe",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "非常",
+      "pinyin": "fēicháng",
+      "meaning": "rất, cực kì",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "但是",
+      "pinyin": "dànshì",
+      "meaning": "nhưng",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "又",
+      "pinyin": "yòu",
+      "meaning": "vừa",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "舒服",
+      "pinyin": "shūfú",
+      "meaning": "thoải mái",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "站",
+      "pinyin": "zhàn",
+      "meaning": "đứng, trạm",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "或是",
+      "pinyin": "huò",
+      "meaning": "shì hoặc",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "臺南",
+      "pinyin": "táinán",
+      "meaning": "Đài Nam",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "高鐵",
+      "pinyin": "gāotiě",
+      "meaning": "đường sắt cao tốc",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "網路上",
+      "pinyin": "wǎng",
+      "meaning": "lùshàng trên mạng",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "便利商店",
+      "pinyin": "biànlì",
+      "meaning": "shāngdiàn cửa hàng tiện lợi",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "同學",
+      "pinyin": "tóngxué",
+      "meaning": "bạn học",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "參觀",
+      "pinyin": "cānguān",
+      "meaning": "tham quan",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "古代",
+      "pinyin": "gǔdài",
+      "meaning": "cổ đại",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "騎",
+      "pinyin": "qí",
+      "meaning": "cưỡi, lái",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "機車",
+      "pinyin": "jī",
+      "meaning": "chē xe oto",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "載",
+      "pinyin": "zài",
+      "meaning": "chở",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "捷運",
+      "pinyin": "jié yùn tàu",
+      "meaning": "điện ngầm",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "比",
+      "pinyin": "bǐ",
+      "meaning": "so sánh, so với",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "故宮博物館",
+      "pinyin": "gùgōng",
+      "meaning": "bówùguǎn bảo tàng Cố Cung",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "中國",
+      "pinyin": "zhōngguó",
+      "meaning": "Trung Quốc",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "公共汽車",
+      "pinyin": "gōnggòng",
+      "meaning": "qìchē xe buýt",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "不行",
+      "pinyin": "bùxíng",
+      "meaning": "không được",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "計程車",
+      "pinyin": "jìchéngchē",
+      "meaning": "taxi",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "差不多",
+      "pinyin": "chàbùduō",
+      "meaning": "gần giống nhau, xấp xỉ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "星期",
+      "pinyin": "Xīngqí",
+      "meaning": "Tuần, thứ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "回國",
+      "pinyin": "huíguó",
+      "meaning": "về nước",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "打算",
+      "pinyin": "dǎsuàn",
+      "meaning": "dự định",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "電視",
+      "pinyin": "diànshì",
+      "meaning": "tivi",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "旅行",
+      "pinyin": "lǚxíng",
+      "meaning": "du lịch",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "影片",
+      "pinyin": "yǐngpiàn",
+      "meaning": "phim",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "功課",
+      "pinyin": "gōngkè",
+      "meaning": "bài tập về nhà",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "出去",
+      "pinyin": "chūqù",
+      "meaning": "ra ngoài",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "大概",
+      "pinyin": "dàgài",
+      "meaning": "khoảng",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "放假",
+      "pinyin": "fàngjià",
+      "meaning": "nghỉ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "下個星期",
+      "pinyin": "xià",
+      "meaning": "gè xīngqí tuần sau",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "有時候",
+      "pinyin": "yǒu",
+      "meaning": "shíhòu có khi",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "多久",
+      "pinyin": "duōjiǔ",
+      "meaning": "bao lâu",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "臺東",
+      "pinyin": "tái dōng",
+      "meaning": "Đài Đông",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "女",
+      "pinyin": "nǚ",
+      "meaning": "nữ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "月",
+      "pinyin": "yuè",
+      "meaning": "tháng",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "號",
+      "pinyin": "hào",
+      "meaning": "ngày",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "帶",
+      "pinyin": "dài",
+      "meaning": "mang, dẫn",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "她",
+      "pinyin": "tā",
+      "meaning": "cô ấy",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "還",
+      "pinyin": "hái",
+      "meaning": "vẫn",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "建議",
+      "pinyin": "jiànyì",
+      "meaning": "kiến nghị",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "夜市",
+      "pinyin": "yèshì",
+      "meaning": "chợ đêm",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "應該",
+      "pinyin": "yīnggāi",
+      "meaning": "nên",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "逛",
+      "pinyin": "guàng",
+      "meaning": "dạo",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "特別",
+      "pinyin": "tèbié",
+      "meaning": "đặc biệt",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "茶館",
+      "pinyin": "cháguǎn",
+      "meaning": "quán trà",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "決定",
+      "pinyin": "juédìng",
+      "meaning": "quyết định",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "要是",
+      "pinyin": "yàoshi",
+      "meaning": "nếu",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "就",
+      "pinyin": "jiù",
+      "meaning": "thì",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "貓空",
+      "pinyin": "māo",
+      "meaning": "kōng Mèo Không (Mao Kong)",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "水果",
+      "pinyin": "Shuǐguǒ",
+      "meaning": "trái cây",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "黃色",
+      "pinyin": "huángsè",
+      "meaning": "màu vàng",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "芒果",
+      "pinyin": "mángguǒ",
+      "meaning": "quả xoài",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "給",
+      "pinyin": "gěi",
+      "meaning": "đưa cho",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "香",
+      "pinyin": "xiāng",
+      "meaning": "hương, thơm",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "甜",
+      "pinyin": "tián",
+      "meaning": "ngọt",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "紅色",
+      "pinyin": "hóngsè màu",
+      "meaning": "đỏ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "西瓜",
+      "pinyin": "xīguā",
+      "meaning": "dưa hấu",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "對",
+      "pinyin": "duì",
+      "meaning": "đối với, đúng",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "以前",
+      "pinyin": "yǐqián",
+      "meaning": "trước đây, trước khi",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "機會",
+      "pinyin": "jīhuì",
+      "meaning": "cơ hội",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "吃吃看",
+      "pinyin": "chī chī kàn",
+      "meaning": "ăn thử",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "拍",
+      "pinyin": "pāi",
+      "meaning": "đập, vỗ, phủi",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "笑",
+      "pinyin": "xiào",
+      "meaning": "cười",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "開心",
+      "pinyin": "kāixīn",
+      "meaning": "vui",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "穿",
+      "pinyin": "chuān",
+      "meaning": "mặc",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "衣服",
+      "pinyin": "yīfú",
+      "meaning": "quần áo",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "旅館",
+      "pinyin": "lǚguǎn",
+      "meaning": "quán trọ, khách sạn",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "太太",
+      "pinyin": "tàitài",
+      "meaning": "bà (gọi người phụ nữ đã có chồng)",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "男",
+      "pinyin": "nán",
+      "meaning": "nam",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "矮",
+      "pinyin": "ǎi",
+      "meaning": "thấp",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "高",
+      "pinyin": "gāo",
+      "meaning": "cao",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "弟弟",
+      "pinyin": "dìdì",
+      "meaning": "em trai",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "乾淨",
+      "pinyin": "gānjìng",
+      "meaning": "sạch sẽ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "窗戶",
+      "pinyin": "chuānghù",
+      "meaning": "cửa sổ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "往",
+      "pinyin": "wǎng",
+      "meaning": "hướng tới, đến",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "藍色",
+      "pinyin": "lán",
+      "meaning": "sè màu xanh lam",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "因為",
+      "pinyin": "yīnwèi",
+      "meaning": "bởi vì",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "住",
+      "pinyin": "zhù",
+      "meaning": "ở, cư trú",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "上個月",
+      "pinyin": "shàng",
+      "meaning": "gè yuè tháng trước",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "這些",
+      "pinyin": "zhèxiē",
+      "meaning": "những",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "租",
+      "pinyin": "Zū",
+      "meaning": "thuê, mướn",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "房東",
+      "pinyin": "fángdōng",
+      "meaning": "chủ nhà, chủ cho thuê nhà",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "客廳",
+      "pinyin": "kètīng",
+      "meaning": "phòng khách",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "廚房",
+      "pinyin": "chúfáng",
+      "meaning": "nhà bếp",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "左邊",
+      "pinyin": "zuǒbiān",
+      "meaning": "bên trái",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "右邊",
+      "pinyin": "yòubiān",
+      "meaning": "bên phải",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "浴室",
+      "pinyin": "yùshì",
+      "meaning": "phòng tắm",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "超市",
+      "pinyin": "chāoshì",
+      "meaning": "siêu thị",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "走路",
+      "pinyin": "zǒulù",
+      "meaning": "đi bộ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "分鐘",
+      "pinyin": "fēnzhōng",
+      "meaning": "phút",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "間",
+      "pinyin": "jiān",
+      "meaning": "giữa, khoảng, gian",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "空",
+      "pinyin": "kōng",
+      "meaning": "trống, trống không",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "房間",
+      "pinyin": "fángjiān",
+      "meaning": "phòng",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "套房",
+      "pinyin": "tàofáng",
+      "meaning": "phòng khép kín, studio, thượng hạng",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "回去",
+      "pinyin": "huíqù",
+      "meaning": "trở về, trở lại, quay về",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "再",
+      "pinyin": "zài",
+      "meaning": "lặp lại, thêm",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "電話",
+      "pinyin": "diànhuà",
+      "meaning": "điện thoại",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "林",
+      "pinyin": "lín",
+      "meaning": "lâm (họ Lâm)",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "打電話",
+      "pinyin": "dǎ",
+      "meaning": "diànhuà gọi điện thoại",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "喂",
+      "pinyin": "wèi",
+      "meaning": "alo",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "房租",
+      "pinyin": "fángzū",
+      "meaning": "tiền thuê nhà",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "已經",
+      "pinyin": "yǐjīng",
+      "meaning": "đã",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "習慣",
+      "pinyin": "xíguàn",
+      "meaning": "thói quen, quen với",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "問題",
+      "pinyin": "wèntí",
+      "meaning": "vấn đề, câu hỏi",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "熱水器",
+      "pinyin": "rèshuǐqì",
+      "meaning": "máy nước nóng",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "好像",
+      "pinyin": "hǎoxiàng",
+      "meaning": "hình như, dường như, giống như",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "等",
+      "pinyin": "děng",
+      "meaning": "chờ, đợi",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "裝",
+      "pinyin": "zhuāng",
+      "meaning": "lắp đặt",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "不過",
+      "pinyin": "bùguò",
+      "meaning": "nhưng",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "付",
+      "pinyin": "fù",
+      "meaning": "chi, trả (tiền)",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "受到",
+      "pinyin": "shòudào",
+      "meaning": "nhận được",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "不好意思",
+      "pinyin": "bù",
+      "meaning": "hǎoyìsi xin lỗi, ngại quá",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "沒關係",
+      "pinyin": "méiguānxì",
+      "meaning": "không sao, không việc gì",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "有線電視",
+      "pinyin": "yǒuxiàn",
+      "meaning": "diànshì truyền hình cáp",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "計畫",
+      "pinyin": "Jì",
+      "meaning": "huà dự định, kế hoạch",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "年",
+      "pinyin": "nián",
+      "meaning": "năm",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "久",
+      "pinyin": "jiǔ",
+      "meaning": "lâu, lâu dài",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "時間",
+      "pinyin": "shíjiān",
+      "meaning": "thời gian",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "先",
+      "pinyin": "xiān",
+      "meaning": "trước, trước tiên",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "念",
+      "pinyin": "niàn",
+      "meaning": "học, đọc",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "大學",
+      "pinyin": "dàxué",
+      "meaning": "đại học",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "需要",
+      "pinyin": "xūyào",
+      "meaning": "cần, cần thiết, nhu cầu",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "花",
+      "pinyin": "huā",
+      "meaning": "tiêu, tốn",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "獎學金",
+      "pinyin": "jiǎngxuéjīn",
+      "meaning": "học bổng",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "成績",
+      "pinyin": "chéngjī",
+      "meaning": "điểm, thành tích",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "學費",
+      "pinyin": "xuéfèi",
+      "meaning": "học phí",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "公司",
+      "pinyin": "gōngsī",
+      "meaning": "công ty",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "替",
+      "pinyin": "tì",
+      "meaning": "giúp, thay",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "希望",
+      "pinyin": "xīwàng",
+      "meaning": "hi vọng, mong ước",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "以後",
+      "pinyin": "yǐhòu",
+      "meaning": "sau này, sau khi",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "上班",
+      "pinyin": "shàngbān",
+      "meaning": "đi làm",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "念書",
+      "pinyin": "niànshū",
+      "meaning": "học",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "累",
+      "pinyin": "lèi",
+      "meaning": "mệt",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "語言中心",
+      "pinyin": "yǔyán",
+      "meaning": "zhōngxīn trung tâm ngoại ngữ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "加油",
+      "pinyin": "jiāyóu",
+      "meaning": "cố lên",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "工作",
+      "pinyin": "gōngzuò",
+      "meaning": "làm việc",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "去年",
+      "pinyin": "qùnián",
+      "meaning": "năm rồi, năm trước",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "做",
+      "pinyin": "zuò",
+      "meaning": "làm",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "生意",
+      "pinyin": "shēngyì",
+      "meaning": "việc kinh doanh",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "這樣",
+      "pinyin": "zhèyàng",
+      "meaning": "như thế này",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "國家",
+      "pinyin": "guójiā",
+      "meaning": "quốc gia",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "試",
+      "pinyin": "shì",
+      "meaning": "thử",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "難",
+      "pinyin": "nán",
+      "meaning": "khó",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "那麼",
+      "pinyin": "nàme",
+      "meaning": "như thế",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "試試看",
+      "pinyin": "shì",
+      "meaning": "shìkàn xem thử",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "生日",
+      "pinyin": "Shēngrì",
+      "meaning": "sinh nhật",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "快樂",
+      "pinyin": "kuàilè",
+      "meaning": "vui vẻ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "回來",
+      "pinyin": "huílái",
+      "meaning": "trở về, trở lại",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "忘",
+      "pinyin": "wàng",
+      "meaning": "quên",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "記得",
+      "pinyin": "jìdé",
+      "meaning": "nhớ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "當然",
+      "pinyin": "dāngrán",
+      "meaning": "đương nhiên, dĩ nhiên",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "語言",
+      "pinyin": "yǔyán",
+      "meaning": "ngôn ngữ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "交換",
+      "pinyin": "jiāohuàn trao",
+      "meaning": "đổi",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "熱心",
+      "pinyin": "rèxīn",
+      "meaning": "nhiệt tình",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "西班牙文",
+      "pinyin": "xībānyá",
+      "meaning": "wén tiếng Tây Ban Nha",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "一樣",
+      "pinyin": "yīyàng",
+      "meaning": "giống nhau, như nhau",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "過",
+      "pinyin": "guò",
+      "meaning": "đón (sinh nhật), qua",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "左右",
+      "pinyin": "zuǒyòu",
+      "meaning": "khoảng",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "門口",
+      "pinyin": "ménkǒu",
+      "meaning": "cửa, cổng",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "我就是",
+      "pinyin": "wǒ",
+      "meaning": "jiùshì chính là tôi",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "好久不見",
+      "pinyin": "hǎojiǔ bùjiàn",
+      "meaning": "đã lâu không gặp",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "不必客氣",
+      "pinyin": "bùbì",
+      "meaning": "kèqì không cần khách sáo",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "太客氣",
+      "pinyin": "tài",
+      "meaning": "kèqì khách sáo quá",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "禮物",
+      "pinyin": "lǐwù",
+      "meaning": "món quà",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "今年",
+      "pinyin": "jīnnián",
+      "meaning": "năm nay",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "訂",
+      "pinyin": "dìng",
+      "meaning": "đặt",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "豬腳",
+      "pinyin": "zhū",
+      "meaning": "jiǎo giò heo",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "麵線",
+      "pinyin": "miàn",
+      "meaning": "xiàn mì sợi",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "蛋",
+      "pinyin": "dàn",
+      "meaning": "trứng",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "一點",
+      "pinyin": "yīdiǎn",
+      "meaning": "1 chút",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "傳統",
+      "pinyin": "chuántǒng",
+      "meaning": "truyền thống",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "年輕",
+      "pinyin": "niánqīng",
+      "meaning": "trẻ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "蛋糕",
+      "pinyin": "dàngāo",
+      "meaning": "bánh kem, bánh gato",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "祝",
+      "pinyin": "zhù",
+      "meaning": "chúc",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "哪裡哪裡",
+      "pinyin": "nǎlǐ",
+      "meaning": "nǎlǐ quá khen, đâu có",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "大部分",
+      "pinyin": "dà",
+      "meaning": "bùfèn hầu hết, phần lớn",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "萬事如意",
+      "pinyin": "wànshì",
+      "meaning": "rúyì vạn sự như ý",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "心想事成",
+      "pinyin": "xīn",
+      "meaning": "xiǎng shì chéng vạn sự như ý, tâm tưởng sự thành",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "天氣",
+      "pinyin": "Tiānqì",
+      "meaning": "thời tiết",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "冷",
+      "pinyin": "lěng",
+      "meaning": "lạnh",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "風",
+      "pinyin": "fēng",
+      "meaning": "gió",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "滑雪",
+      "pinyin": "huáxuě",
+      "meaning": "trượt tuyết",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "春天",
+      "pinyin": "chūntiān",
+      "meaning": "mùa xuân",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "新年",
+      "pinyin": "xīnnián",
+      "meaning": "năm mới",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "父母",
+      "pinyin": "fùmǔ",
+      "meaning": "ba mẹ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "冬天",
+      "pinyin": "dōngtiān mùa",
+      "meaning": "đông",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "明年",
+      "pinyin": "míngnián",
+      "meaning": "năm sau",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "秋天",
+      "pinyin": "qiūtiān",
+      "meaning": "mùa thu",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "紅葉",
+      "pinyin": "hóngyè lá",
+      "meaning": "đỏ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "只",
+      "pinyin": "zhǐ",
+      "meaning": "chỉ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "玉山",
+      "pinyin": "yùshān",
+      "meaning": "Núi Ngọc (núi Yushan Đài Loan)",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "紐約",
+      "pinyin": "niǔyuē",
+      "meaning": "New York",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "下雪",
+      "pinyin": "xià",
+      "meaning": "xuě tuyết rơi",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "十二月底",
+      "pinyin": "shí'èr",
+      "meaning": "yuèdǐ cuối tháng 12",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "雨",
+      "pinyin": "yǔ",
+      "meaning": "mưa",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "傘",
+      "pinyin": "sǎn",
+      "meaning": "ô, dù",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "颱風",
+      "pinyin": "táifēng",
+      "meaning": "bão",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "夏天",
+      "pinyin": "xiàtiān",
+      "meaning": "mùa hè",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "濕",
+      "pinyin": "shī",
+      "meaning": "ướt, ẩm ướt",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "討厭",
+      "pinyin": "tǎoyàn",
+      "meaning": "đáng ghét",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "新聞",
+      "pinyin": "xīnwén",
+      "meaning": "tin tức",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "更",
+      "pinyin": "gèng",
+      "meaning": "càng, hơn",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "大家",
+      "pinyin": "dàjiā",
+      "meaning": "mọi người",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "小心",
+      "pinyin": "xiǎoxīn",
+      "meaning": "cẩn thận",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "可怕",
+      "pinyin": "kěpà",
+      "meaning": "đáng sợ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "停",
+      "pinyin": "tíng",
+      "meaning": "ngưng, dừng",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "下雨",
+      "pinyin": "xià",
+      "meaning": "yǔ mưa",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "這次",
+      "pinyin": "zhècì",
+      "meaning": "lần này",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "上次",
+      "pinyin": "shàng",
+      "meaning": "cì lần trước",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "慢走",
+      "pinyin": "màn zǒu",
+      "meaning": "đi cẩn thận",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "醫生",
+      "pinyin": "Yīshēng",
+      "meaning": "bác sĩ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "一直",
+      "pinyin": "yīzhí",
+      "meaning": "liên tục",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "流",
+      "pinyin": "liú",
+      "meaning": "chảy",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "鼻水",
+      "pinyin": "bíshuǐ",
+      "meaning": "nước mũi",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "頭",
+      "pinyin": "tóu",
+      "meaning": "đầu",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "痛",
+      "pinyin": "tòng",
+      "meaning": "đau",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "胃口",
+      "pinyin": "wèikǒu",
+      "meaning": "khẩu vị",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "差",
+      "pinyin": "chà",
+      "meaning": "kém, tệ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "喉嚨",
+      "pinyin": "hóulóng",
+      "meaning": "cổ họng",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "發炎",
+      "pinyin": "fāyán",
+      "meaning": "bị viêm",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "生病",
+      "pinyin": "shēngbìng",
+      "meaning": "bị bệnh",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "發燒",
+      "pinyin": "fāshāo",
+      "meaning": "sốt",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "感冒",
+      "pinyin": "gǎnmào",
+      "meaning": "cảm cúm",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "藥",
+      "pinyin": "yào",
+      "meaning": "thuốc",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "藥局",
+      "pinyin": "yào",
+      "meaning": "jú tiệm thuốc",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "拿",
+      "pinyin": "ná",
+      "meaning": "lấy",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "把",
+      "pinyin": "bǎ",
+      "meaning": "đem",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "水",
+      "pinyin": "shuǐ",
+      "meaning": "nước",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "休息",
+      "pinyin": "xiūxí",
+      "meaning": "nghỉ ngơi",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "睡覺",
+      "pinyin": "shuìjiào",
+      "meaning": "ngủ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "早一點",
+      "pinyin": "zǎo",
+      "meaning": "yīdiǎn sớm 1 chút",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "臉色",
+      "pinyin": "liǎnsè",
+      "meaning": "sắc mặt",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "難看",
+      "pinyin": "nánkàn",
+      "meaning": "khó coi, nhợt nhạt",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "肚子",
+      "pinyin": "dùzi",
+      "meaning": "bụng",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "吐",
+      "pinyin": "tǔ",
+      "meaning": "nôn",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "次",
+      "pinyin": "cì",
+      "meaning": "lần",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "陪",
+      "pinyin": "péi",
+      "meaning": "cùng, đi cùng",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "看病",
+      "pinyin": "kànbìng",
+      "meaning": "khám bệnh",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "健康",
+      "pinyin": "jiànkāng",
+      "meaning": "sức khỏe",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "保險",
+      "pinyin": "bǎoxiǎn",
+      "meaning": "bảo hiểm",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "油",
+      "pinyin": "yóu",
+      "meaning": "dầu, nhiều dầu mỡ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "冰",
+      "pinyin": "bīng",
+      "meaning": "đá, lạnh",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "別",
+      "pinyin": "bié",
+      "meaning": "đừng, khác",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "關心",
+      "pinyin": "guānxīn",
+      "meaning": "quan tâm",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "包",
+      "pinyin": "bāo",
+      "meaning": "túi, balo, gói",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "睡",
+      "pinyin": "shuì",
+      "meaning": "ngủ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "小時",
+      "pinyin": "xiǎoshí",
+      "meaning": "tiếng đồng hồ",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "怎麼了",
+      "pinyin": "zěnmele",
+      "meaning": "làm sao vậy, bị sao vậy",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "不用了",
+      "pinyin": "bùyòngle",
+      "meaning": "không cần đâu",
+      "level": "TOCFL A1",
+      "notes": ""
+    },
+    {
+      "word": "健康中心",
+      "pinyin": "jiànkāng",
+      "meaning": "zhōngxīn trung tâm y tế",
+      "level": "TOCFL A1",
+      "notes": ""
+    }
+  ]
+}

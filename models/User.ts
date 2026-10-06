@@ -4,7 +4,8 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 import bcrypt from "bcryptjs";
 
 export interface IUser extends Document {
-  username: string;
+  username?: string;
+  email?: string;
   password: string;
   role: "student" | "admin";
   createdAt: Date;
@@ -14,8 +15,11 @@ export interface IUser extends Document {
 const userSchema = new Schema<IUser>({
   username: {
     type: String,
-    required: [true, "Vui lòng nhập tên tài khoản"],
-    unique: true,
+    trim: true,
+    lowercase: true,
+  },
+  email: {
+    type: String,
     trim: true,
     lowercase: true,
   },

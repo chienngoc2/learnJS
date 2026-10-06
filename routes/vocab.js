@@ -13,12 +13,14 @@ import {
   deleteSingleGrammar,
   updateSingleGrammar,
   getAllGrammarPointsOnly,
+  getMasterVocab,
 } from "../controllers/vocabController.js";
 import { protect, authorize, optionalAuth } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
 // 👥 Routes danh sách từ vựng & ngữ pháp (hỗ trợ cả khách lẫn học viên đã đăng nhập)
+router.get("/master", optionalAuth, getMasterVocab);
 router.get("/lists", optionalAuth, getAllLists);
 router.get("/list/:id", optionalAuth, getListById);
 router.post("/log-view", optionalAuth, logView);

@@ -19,6 +19,7 @@ dotenv.config();
 const app = express();
 
 // 1. Kết nối Database
+// Reloaded with email auth & tsx support
 connectDB();
 
 // 2. Cấu hình Middleware
@@ -127,8 +128,10 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
+const isMainModule = process.argv[1] && (process.argv[1].endsWith("server.js") || process.argv[1].endsWith("server.ts"));
+
 // Khởi chạy HTTP Server trên các môi trường thông thường (Local, Render, Heroku...), ngoại trừ Vercel hoặc Test
-if (!process.env.VERCEL && process.env.NODE_ENV !== "test") {
+if (!process.env.VERCEL && process.env.NODE_ENV !== "test" && isMainModule) {
   app.listen(PORT, () => {
     console.log(`
     =================================================
