@@ -148,7 +148,11 @@ const normalizeWordsList = (list: any[]): any[] => {
         examples: item.examples || extra.examples,
         audio: item.audio || extra.audio,
         tags: item.tags || extra.tags,
-        notes: item.notes || extra.notes
+        notes: item.notes || extra.notes,
+        isPriority: item.isPriority !== undefined ? Boolean(item.isPriority) : false,
+        priorityAddedAt: item.priorityAddedAt || (item.isPriority ? new Date() : undefined),
+        topicTitle: item.topicTitle || extra.topicTitle,
+        topicId: item.topicId || extra.topicId
       };
     }
     // Định dạng WordDetails từ frontend web/mobile mới
@@ -161,7 +165,9 @@ const normalizeWordsList = (list: any[]): any[] => {
         examples: item.examples || [],
         audio: item.audio || "",
         tags: item.tags || [],
-        notes: item.notes || ""
+        notes: item.notes || "",
+        topicTitle: item.topicTitle,
+        topicId: item.topicId
       };
       return {
         term: String(item.word),
@@ -174,7 +180,11 @@ const normalizeWordsList = (list: any[]): any[] => {
         examples: defObj.examples,
         audio: defObj.audio,
         tags: defObj.tags,
-        notes: defObj.notes
+        notes: defObj.notes,
+        isPriority: item.isPriority !== undefined ? Boolean(item.isPriority) : false,
+        priorityAddedAt: item.priorityAddedAt || (item.isPriority ? new Date() : undefined),
+        topicTitle: item.topicTitle,
+        topicId: item.topicId
       };
     }
     return null;
@@ -515,5 +525,207 @@ export const getMasterVocab = asyncHandler(async (req: Request, res: Response): 
   res.json({
     success: true,
     data: parsed,
+  });
+});
+
+// =========================================================================
+// ⭐ 3. CÁC HÀM XỬ LÝ DANH SÁCH ƯU TIÊN ÔN TẬP (PRIORITY REVIEW)
+// =========================================================================
+
+// @desc    Thêm từ vào danh sách ưu tiên ôn tập (hoặc đánh dấu ưu tiên nếu đã có trong Cần ôn tập)
+// @route   POST /api/vocab/priority/add
+export const addPriorityWord = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const authReq = req as AuthenticatedRequest;
+  const userId = authReq.user?._id;
+  const { term, word, reading, meaning, pinyin, def, topicTitle, topicId } = req.body;
+
+  const targetTerm = String(term || word || "").trim();
+  if (!targetTerm) {
+    throw new ValidationError("Thiếu thông tin từ vựng cần ưu tiên!");
+  }
+
+  const query = userId 
+    ? { title: "Cần ôn tập", userId }
+    : { title: "Cần ôn tập", $or: [{ userId: { $exists: false } }, { userId: null }] };
+
+  let reviewList = await VocabList.findOne(query);
+  if (!reviewList) {
+    reviewList = new VocabList({
+      title: "Cần ôn tập",
+      userId,
+      words: []
+    });
+  }
+
+  const targetReading = reading || pinyin || "";
+  const targetMeaning = meaning || "";
+  const defString = def ? (typeof def === "object" ? JSON.stringify(def) : String(def)) : JSON.stringify({
+    reading: targetReading,
+    meaning: targetMeaning,
+  });
+
+  const existingWordIdx = (reviewList.words as any[]).findIndex((w) => w.term === targetTerm);
+  if (existingWordIdx >= 0) {
+    const existingWord = reviewList.words[existingWordIdx] as any;
+    existingWord.isPriority = true;
+    existingWord.priorityAddedAt = new Date();
+    if (topicTitle) existingWord.topicTitle = topicTitle;
+    if (topicId) existingWord.topicId = topicId;
+    if (targetReading && !existingWord.reading) existingWord.reading = targetReading;
+    if (targetMeaning && !existingWord.meaning) existingWord.meaning = targetMeaning;
+  } else {
+    reviewList.words.unshift({
+      term: targetTerm,
+      def: defString,
+      reading: targetReading,
+      pinyin: targetReading,
+      meaning: targetMeaning,
+      correctCount: 0,
+      isPriority: true,
+      priorityAddedAt: new Date(),
+      topicTitle: topicTitle || "Khác",
+      topicId: topicId || undefined,
+    } as any);
+  }
+
+  await reviewList.save();
+  res.json({
+    success: true,
+    isPriority: true,
+    message: `Đã đánh dấu ưu tiên từ "${targetTerm}"`,
+    data: { term: targetTerm, isPriority: true }
+  });
+});
+
+// @desc    Bật/Tắt trạng thái ưu tiên của 1 từ
+// @route   POST /api/vocab/priority/toggle
+export const togglePriorityWord = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const authReq = req as AuthenticatedRequest;
+  const userId = authReq.user?._id;
+  const { term, word, reading, meaning, pinyin, def, topicTitle, topicId } = req.body;
+
+  const targetTerm = String(term || word || "").trim();
+  if (!targetTerm) {
+    throw new ValidationError("Thiếu thông tin từ vựng!");
+  }
+
+  const query = userId 
+    ? { title: "Cần ôn tập", userId }
+    : { title: "Cần ôn tập", $or: [{ userId: { $exists: false } }, { userId: null }] };
+
+  let reviewList = await VocabList.findOne(query);
+  if (!reviewList) {
+    reviewList = new VocabList({
+      title: "Cần ôn tập",
+      userId,
+      words: []
+    });
+  }
+
+  const existingWordIdx = (reviewList.words as any[]).findIndex((w) => w.term === targetTerm);
+  let newPriorityStatus = true;
+
+  if (existingWordIdx >= 0) {
+    const existingWord = reviewList.words[existingWordIdx] as any;
+    newPriorityStatus = !existingWord.isPriority;
+    existingWord.isPriority = newPriorityStatus;
+    if (newPriorityStatus) {
+      existingWord.priorityAddedAt = new Date();
+    }
+    if (topicTitle) existingWord.topicTitle = topicTitle;
+    if (topicId) existingWord.topicId = topicId;
+  } else {
+    const targetReading = reading || pinyin || "";
+    const targetMeaning = meaning || "";
+    const defString = def ? (typeof def === "object" ? JSON.stringify(def) : String(def)) : JSON.stringify({
+      reading: targetReading,
+      meaning: targetMeaning,
+    });
+
+    reviewList.words.unshift({
+      term: targetTerm,
+      def: defString,
+      reading: targetReading,
+      pinyin: targetReading,
+      meaning: targetMeaning,
+      correctCount: 0,
+      isPriority: true,
+      priorityAddedAt: new Date(),
+      topicTitle: topicTitle || "Khác",
+      topicId: topicId || undefined,
+    } as any);
+    newPriorityStatus = true;
+  }
+
+  await reviewList.save();
+  res.json({
+    success: true,
+    isPriority: newPriorityStatus,
+    term: targetTerm,
+    message: newPriorityStatus
+      ? `Đã thêm "${targetTerm}" vào ưu tiên ôn tập`
+      : `Đã bỏ ưu tiên cho từ "${targetTerm}"`
+  });
+});
+
+// @desc    Gỡ ưu tiên của 1 từ
+// @route   POST /api/vocab/priority/remove
+export const removePriorityWord = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const authReq = req as AuthenticatedRequest;
+  const userId = authReq.user?._id;
+  const { term, word } = req.body;
+  const targetTerm = String(term || word || "").trim();
+
+  if (!targetTerm) {
+    throw new ValidationError("Thiếu thông tin từ vựng!");
+  }
+
+  const query = userId 
+    ? { title: "Cần ôn tập", userId }
+    : { title: "Cần ôn tập", $or: [{ userId: { $exists: false } }, { userId: null }] };
+
+  const reviewList = await VocabList.findOne(query);
+  if (reviewList) {
+    const existingWord = (reviewList.words as any[]).find((w) => w.term === targetTerm);
+    if (existingWord) {
+      existingWord.isPriority = false;
+      await reviewList.save();
+    }
+  }
+
+  res.json({ success: true, isPriority: false, message: `Đã gỡ ưu tiên từ "${targetTerm}"` });
+});
+
+// @desc    Lấy toàn bộ từ trong danh sách ưu tiên ôn tập (kèm danh sách bài học gốc để lọc)
+// @route   GET /api/vocab/priority/list
+export const getPriorityWords = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const authReq = req as AuthenticatedRequest;
+  const userId = authReq.user?._id;
+
+  const query = userId 
+    ? { title: "Cần ôn tập", userId }
+    : { title: "Cần ôn tập", $or: [{ userId: { $exists: false } }, { userId: null }] };
+
+  const reviewList = await VocabList.findOne(query);
+  if (!reviewList || !reviewList.words) {
+    res.json({ success: true, count: 0, words: [], topics: [] });
+    return;
+  }
+
+  // Lọc các từ có isPriority === true
+  const priorityWords = (reviewList.words as any[]).filter((w) => w.isPriority);
+  
+  // Tổng hợp danh sách các bài học gốc để user lọc theo từng bài
+  const topicSet = new Set<string>();
+  priorityWords.forEach((w) => {
+    if (w.topicTitle) topicSet.add(w.topicTitle);
+  });
+
+  res.json({
+    success: true,
+    count: priorityWords.length,
+    words: priorityWords,
+    topics: Array.from(topicSet),
+    listId: reviewList._id,
   });
 });

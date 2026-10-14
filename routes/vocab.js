@@ -14,6 +14,10 @@ import {
   updateSingleGrammar,
   getAllGrammarPointsOnly,
   getMasterVocab,
+  addPriorityWord,
+  togglePriorityWord,
+  removePriorityWord,
+  getPriorityWords,
 } from "../controllers/vocabController.js";
 import { protect, authorize, optionalAuth } from "../middleware/authMiddleware.js";
 
@@ -25,6 +29,12 @@ router.get("/lists", optionalAuth, getAllLists);
 router.get("/list/:id", optionalAuth, getListById);
 router.post("/log-view", optionalAuth, logView);
 router.get("/all-grammar-points", optionalAuth, getAllGrammarPointsOnly);
+
+// ⭐ Quản lý danh sách ưu tiên ôn tập
+router.get("/priority/list", optionalAuth, getPriorityWords);
+router.post("/priority/add", optionalAuth, addPriorityWord);
+router.post("/priority/toggle", optionalAuth, togglePriorityWord);
+router.post("/priority/remove", optionalAuth, removePriorityWord);
 
 // 📚 Quản lý từ vựng & ngữ pháp
 router.post("/save-review", optionalAuth, saveReviewList);

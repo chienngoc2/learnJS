@@ -21,6 +21,10 @@ export interface IWord {
   audio?: string;
   tags?: string[];
   notes?: string;
+  isPriority?: boolean;
+  priorityAddedAt?: Date;
+  topicTitle?: string;
+  topicId?: string;
 }
 
 export interface IGrammarPoint {
@@ -62,7 +66,11 @@ const vocabListSchema = new Schema<IVocabList>({
       examples: { type: [Schema.Types.Mixed], default: undefined },
       audio: { type: String },
       tags: { type: [String] },
-      notes: { type: String }
+      notes: { type: String },
+      isPriority: { type: Boolean, default: false },
+      priorityAddedAt: { type: Date },
+      topicTitle: { type: String },
+      topicId: { type: String }
     },
   ],
 
