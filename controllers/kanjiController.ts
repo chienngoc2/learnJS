@@ -6,6 +6,7 @@ import Kanji from "../models/Kanji.js";
 import VocabList from "../models/VocabList.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { NotFoundError, ValidationError, ConflictError } from "../utils/errors.js";
+import { cleanPinyinForMatching } from "../utils/pinyinUtils.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -167,21 +168,36 @@ export const searchKanji = asyncHandler(async (
     }
   });
 
-  // 5. Tìm chính xác hoặc tìm mờ trong toàn bộ kho từ vựng
+  const qCleanPinyin = cleanPinyinForMatching(q);
+
+  // 5. Tìm chính xác hoặc tìm theo Pinyin hoặc tìm mờ trong toàn bộ kho từ vựng
   const exactMatch = combinedAllWords.find(
     (w) => w.word === q || w.word.toLowerCase() === q.toLowerCase()
   );
 
-  const fuzzyMatch = !exactMatch
+  const pinyinExactMatch = !exactMatch && qCleanPinyin
+    ? combinedAllWords.find((w) => cleanPinyinForMatching(w.pinyin || "") === qCleanPinyin)
+    : null;
+
+  const fuzzyMatch = !exactMatch && !pinyinExactMatch
     ? combinedAllWords.find(
         (w) =>
           w.word.includes(q) ||
           (w.pinyin && w.pinyin.toLowerCase().includes(q.toLowerCase())) ||
+          (qCleanPinyin && cleanPinyinForMatching(w.pinyin || "").includes(qCleanPinyin)) ||
           (w.meaning && w.meaning.toLowerCase().includes(q.toLowerCase()))
       )
     : null;
 
-  const targetWord = exactMatch || fuzzyMatch;
+  const targetWord = exactMatch || pinyinExactMatch || fuzzyMatch;
+
+  // Lấy danh sách tất cả các từ đồng âm hoặc khớp Pinyin
+  const pinyinMatches = qCleanPinyin && qCleanPinyin.length >= 1
+    ? combinedAllWords.filter((w) => {
+        const wp = cleanPinyinForMatching(w.pinyin || "");
+        return wp === qCleanPinyin || wp.startsWith(qCleanPinyin) || (qCleanPinyin.length >= 2 && wp.includes(qCleanPinyin));
+      }).slice(0, 40)
+    : [];
 
   // Lấy các chữ Hán cấu thành từ khóa
   const mainCharacterStr = exactMatch?.word || kanjiDoc?.character || dbVocabWord?.word || targetWord?.word || q;
@@ -257,6 +273,7 @@ export const searchKanji = asyncHandler(async (
         examples: sampleExamples,
         story: kanjiDoc?.story || "",
         components: kanjiDoc?.components || [],
+        pinyin_matches: pinyinMatches,
       },
     });
     return;
