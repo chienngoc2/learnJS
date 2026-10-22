@@ -97,15 +97,17 @@ export const searchKanji = asyncHandler(async (
   allVocabLists.forEach((list: any) => {
     (list.words || []).forEach((w: any) => {
       let cleanMeaning = w.meaning || w.def || "";
+      let cleanPinyin = w.pinyin || w.reading || "";
       if (typeof cleanMeaning === "string" && cleanMeaning.startsWith("{")) {
         try {
           const parsed = JSON.parse(cleanMeaning);
           cleanMeaning = parsed.meaning || parsed.def || cleanMeaning;
+          cleanPinyin = cleanPinyin || parsed.pinyin || parsed.reading || "";
         } catch (e) {}
       }
       const item = {
         word: w.term,
-        pinyin: w.pinyin || w.reading || "",
+        pinyin: cleanPinyin,
         meaning: String(cleanMeaning || ""),
         level: list.title || w.level || "Bài học",
         lessonTitle: list.title,
@@ -206,7 +208,16 @@ export const searchKanji = asyncHandler(async (
   // Nếu tìm thấy hoặc là chữ Hán hợp lệ
   if (kanjiDoc || dbVocabWord || targetWord || individualChars.length > 0) {
     const character = mainCharacterStr;
-    const pinyin = targetWord?.pinyin || kanjiDoc?.pinyin || dbVocabWord?.pinyin || "";
+    let pinyin = targetWord?.pinyin || kanjiDoc?.pinyin || dbVocabWord?.pinyin || "";
+    if (!pinyin && individualChars.length > 0) {
+      const charPinyins = individualChars.map((ch: string) => {
+        const found = combinedAllWords.find((w) => w.word === ch && w.pinyin);
+        return found?.pinyin || "";
+      });
+      if (charPinyins.some(Boolean)) {
+        pinyin = charPinyins.filter(Boolean).join(" ");
+      }
+    }
     const zhuyin = (targetWord as any)?.zhuyin || kanjiDoc?.zhuyin || "";
     const vietnamese_reading =
       kanjiDoc?.vietnamese_reading ||

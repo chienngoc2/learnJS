@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import VocabList from "../models/VocabList.js";
+import Kanji from "../models/Kanji.js";
 import StudyLog from "../models/StudyLog.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { NotFoundError, ValidationError, UnauthorizedError } from "../utils/errors.js";
@@ -532,7 +533,133 @@ export const getMasterVocab = asyncHandler(async (req: Request, res: Response): 
 // ⭐ 3. CÁC HÀM XỬ LÝ DANH SÁCH ƯU TIÊN ÔN TẬP (PRIORITY REVIEW)
 // =========================================================================
 
-// @desc    Thêm từ vào danh sách ưu tiên ôn tập (hoặc đánh dấu ưu tiên nếu đã có trong Cần ôn tập)
+// Helper: Kiểm tra tiêu đề có phải là bài học chung chung / chưa phân loại không
+const isGenericTopic = (title?: string) => {
+  if (!title) return true;
+  const t = String(title).trim();
+  return (
+    t === "" ||
+    t === "Khác" ||
+    t === "Trắc nghiệm" ||
+    t === "Cần ôn tập" ||
+    t === "Ưu Tiên Ôn Tập" ||
+    t === "Khác/Tự do" ||
+    t === "Chưa phân loại" ||
+    t === "all"
+  );
+};
+
+// Helper: Tự động dò tìm bài học gốc của từ vựng từ VocabList hoặc bảng Kanji
+export async function resolveWordLesson(
+  term: string,
+  providedTopicTitle?: string,
+  providedTopicId?: string,
+  providedReading?: string,
+  providedMeaning?: string
+): Promise<{ topicTitle: string; topicId?: string; reading?: string; meaning?: string }> {
+  const cleanTerm = String(term || "").trim();
+  let resolvedTitle = providedTopicTitle ? String(providedTopicTitle).trim() : "";
+  let resolvedId = providedTopicId;
+  let resolvedReading = providedReading ? String(providedReading).trim() : "";
+  let resolvedMeaning = providedMeaning ? String(providedMeaning).trim() : "";
+
+  // 1. Nếu caller đã truyền một bài học cụ thể (vd "Bài 1", "HSK 2 - Bài 4", "Bộ Thủ"), ta giữ nguyên
+  if (!isGenericTopic(resolvedTitle)) {
+    return {
+      topicTitle: resolvedTitle,
+      topicId: resolvedId,
+      reading: resolvedReading,
+      meaning: resolvedMeaning,
+    };
+  }
+
+  // 2. Tự động DÒ TỪ ĐÓ THUỘC BÀI NÀO trong bộ sưu tập VocabList (trừ danh sách "Cần ôn tập")
+  try {
+    const matchedList = await VocabList.findOne({
+      title: { $ne: "Cần ôn tập" },
+      "words.term": cleanTerm,
+    }).select("title words");
+
+    if (matchedList) {
+      resolvedTitle = matchedList.title;
+      resolvedId = (matchedList._id as any).toString();
+
+      const foundWord = (matchedList.words as any[]).find(
+        (w) => String(w.term || "").trim().toLowerCase() === cleanTerm.toLowerCase()
+      );
+      if (foundWord) {
+        if (!resolvedReading) resolvedReading = foundWord.reading || foundWord.pinyin || "";
+        if (!resolvedMeaning) {
+          let m = foundWord.meaning || foundWord.def || "";
+          if (typeof m === "string" && m.startsWith("{")) {
+            try {
+              const p = JSON.parse(m);
+              m = p.meaning || p.def || m;
+            } catch (e) {}
+          }
+          resolvedMeaning = String(m || "");
+        }
+      }
+
+      return {
+        topicTitle: resolvedTitle,
+        topicId: resolvedId,
+        reading: resolvedReading,
+        meaning: resolvedMeaning,
+      };
+    }
+  } catch (err) {
+    // query error fallback
+  }
+
+  // 3. Nếu chưa thấy trong VocabList, dò tìm tiếp trong bảng Kanji (Chữ Hán & Từ ghép)
+  try {
+    const kanjiDoc = await Kanji.findOne({
+      $or: [
+        { character: cleanTerm },
+        { "example_words.word": cleanTerm },
+      ],
+    }).select("character meaning pinyin vietnamese_reading lessonGroup example_words");
+
+    if (kanjiDoc) {
+      resolvedTitle = kanjiDoc.lessonGroup || "Kanji";
+      if (!resolvedReading) {
+        resolvedReading = kanjiDoc.pinyin || kanjiDoc.vietnamese_reading || "";
+      }
+      if (!resolvedMeaning) {
+        resolvedMeaning = kanjiDoc.meaning || "";
+      }
+
+      // Nếu từ nằm trong danh sách example_words
+      if (kanjiDoc.character !== cleanTerm && kanjiDoc.example_words?.length) {
+        const ew = kanjiDoc.example_words.find((item: any) => item.word === cleanTerm);
+        if (ew) {
+          if (ew.reading) resolvedReading = ew.reading;
+          if (ew.meaning) resolvedMeaning = ew.meaning;
+        }
+      }
+
+      return {
+        topicTitle: resolvedTitle,
+        topicId: resolvedId,
+        reading: resolvedReading,
+        meaning: resolvedMeaning,
+      };
+    }
+  } catch (err) {
+    // kanji lookup fallback
+  }
+
+  // 4. Nếu không tìm thấy ở đâu thì mới fallback về "Khác"
+  return {
+    topicTitle: resolvedTitle && !isGenericTopic(resolvedTitle) ? resolvedTitle : "Khác",
+    topicId: resolvedId,
+    reading: resolvedReading,
+    meaning: resolvedMeaning,
+  };
+}
+
+// @desc    Thêm từ vào danh sách ưu tiên ôn tập (tự động dò bài học nếu chưa có)
 // @route   POST /api/vocab/priority/add
 export const addPriorityWord = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const authReq = req as AuthenticatedRequest;
@@ -543,6 +670,13 @@ export const addPriorityWord = asyncHandler(async (req: Request, res: Response):
   if (!targetTerm) {
     throw new ValidationError("Thiếu thông tin từ vựng cần ưu tiên!");
   }
+
+  // Dò bài học gốc cho từ vựng này
+  const resolved = await resolveWordLesson(targetTerm, topicTitle, topicId, reading || pinyin, meaning || def);
+  const finalTopicTitle = resolved.topicTitle;
+  const finalTopicId = resolved.topicId;
+  const finalReading = resolved.reading || reading || pinyin || "";
+  const finalMeaning = resolved.meaning || meaning || "";
 
   const query = userId 
     ? { title: "Cần ôn tập", userId }
@@ -557,11 +691,9 @@ export const addPriorityWord = asyncHandler(async (req: Request, res: Response):
     });
   }
 
-  const targetReading = reading || pinyin || "";
-  const targetMeaning = meaning || "";
   const defString = def ? (typeof def === "object" ? JSON.stringify(def) : String(def)) : JSON.stringify({
-    reading: targetReading,
-    meaning: targetMeaning,
+    reading: finalReading,
+    meaning: finalMeaning,
   });
 
   const existingWordIdx = (reviewList.words as any[]).findIndex((w) => w.term === targetTerm);
@@ -569,22 +701,26 @@ export const addPriorityWord = asyncHandler(async (req: Request, res: Response):
     const existingWord = reviewList.words[existingWordIdx] as any;
     existingWord.isPriority = true;
     existingWord.priorityAddedAt = new Date();
-    if (topicTitle) existingWord.topicTitle = topicTitle;
-    if (topicId) existingWord.topicId = topicId;
-    if (targetReading && !existingWord.reading) existingWord.reading = targetReading;
-    if (targetMeaning && !existingWord.meaning) existingWord.meaning = targetMeaning;
+
+    // Cập nhật bài học nếu từ cũ chưa có bài hoặc bài mới cụ thể hơn
+    if (!isGenericTopic(finalTopicTitle) || isGenericTopic(existingWord.topicTitle)) {
+      existingWord.topicTitle = finalTopicTitle;
+      if (finalTopicId) existingWord.topicId = finalTopicId;
+    }
+    if (finalReading && !existingWord.reading) existingWord.reading = finalReading;
+    if (finalMeaning && !existingWord.meaning) existingWord.meaning = finalMeaning;
   } else {
     reviewList.words.unshift({
       term: targetTerm,
       def: defString,
-      reading: targetReading,
-      pinyin: targetReading,
-      meaning: targetMeaning,
+      reading: finalReading,
+      pinyin: finalReading,
+      meaning: finalMeaning,
       correctCount: 0,
       isPriority: true,
       priorityAddedAt: new Date(),
-      topicTitle: topicTitle || "Khác",
-      topicId: topicId || undefined,
+      topicTitle: finalTopicTitle,
+      topicId: finalTopicId || undefined,
     } as any);
   }
 
@@ -592,12 +728,13 @@ export const addPriorityWord = asyncHandler(async (req: Request, res: Response):
   res.json({
     success: true,
     isPriority: true,
-    message: `Đã đánh dấu ưu tiên từ "${targetTerm}"`,
-    data: { term: targetTerm, isPriority: true }
+    topicTitle: finalTopicTitle,
+    message: `Đã đánh dấu ưu tiên từ "${targetTerm}" (${finalTopicTitle})`,
+    data: { term: targetTerm, isPriority: true, topicTitle: finalTopicTitle }
   });
 });
 
-// @desc    Bật/Tắt trạng thái ưu tiên của 1 từ
+// @desc    Bật/Tắt trạng thái ưu tiên của 1 từ (tự động dò bài học khi bật ưu tiên)
 // @route   POST /api/vocab/priority/toggle
 export const togglePriorityWord = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const authReq = req as AuthenticatedRequest;
@@ -608,6 +745,13 @@ export const togglePriorityWord = asyncHandler(async (req: Request, res: Respons
   if (!targetTerm) {
     throw new ValidationError("Thiếu thông tin từ vựng!");
   }
+
+  // Dò bài học gốc cho từ vựng này
+  const resolved = await resolveWordLesson(targetTerm, topicTitle, topicId, reading || pinyin, meaning || def);
+  const finalTopicTitle = resolved.topicTitle;
+  const finalTopicId = resolved.topicId;
+  const finalReading = resolved.reading || reading || pinyin || "";
+  const finalMeaning = resolved.meaning || meaning || "";
 
   const query = userId 
     ? { title: "Cần ôn tập", userId }
@@ -624,37 +768,44 @@ export const togglePriorityWord = asyncHandler(async (req: Request, res: Respons
 
   const existingWordIdx = (reviewList.words as any[]).findIndex((w) => w.term === targetTerm);
   let newPriorityStatus = true;
+  let wordTopicTitle = finalTopicTitle;
 
   if (existingWordIdx >= 0) {
     const existingWord = reviewList.words[existingWordIdx] as any;
     newPriorityStatus = !existingWord.isPriority;
     existingWord.isPriority = newPriorityStatus;
+
     if (newPriorityStatus) {
       existingWord.priorityAddedAt = new Date();
+      // Nếu bật lại, tự động cập nhật bài học nếu bài cũ generic hoặc có bài cụ thể hơn
+      if (!isGenericTopic(finalTopicTitle) || isGenericTopic(existingWord.topicTitle)) {
+        existingWord.topicTitle = finalTopicTitle;
+        if (finalTopicId) existingWord.topicId = finalTopicId;
+      }
     }
-    if (topicTitle) existingWord.topicTitle = topicTitle;
-    if (topicId) existingWord.topicId = topicId;
+    wordTopicTitle = existingWord.topicTitle || finalTopicTitle;
+    if (finalReading && !existingWord.reading) existingWord.reading = finalReading;
+    if (finalMeaning && !existingWord.meaning) existingWord.meaning = finalMeaning;
   } else {
-    const targetReading = reading || pinyin || "";
-    const targetMeaning = meaning || "";
     const defString = def ? (typeof def === "object" ? JSON.stringify(def) : String(def)) : JSON.stringify({
-      reading: targetReading,
-      meaning: targetMeaning,
+      reading: finalReading,
+      meaning: finalMeaning,
     });
 
     reviewList.words.unshift({
       term: targetTerm,
       def: defString,
-      reading: targetReading,
-      pinyin: targetReading,
-      meaning: targetMeaning,
+      reading: finalReading,
+      pinyin: finalReading,
+      meaning: finalMeaning,
       correctCount: 0,
       isPriority: true,
       priorityAddedAt: new Date(),
-      topicTitle: topicTitle || "Khác",
-      topicId: topicId || undefined,
+      topicTitle: finalTopicTitle,
+      topicId: finalTopicId || undefined,
     } as any);
     newPriorityStatus = true;
+    wordTopicTitle = finalTopicTitle;
   }
 
   await reviewList.save();
@@ -662,8 +813,9 @@ export const togglePriorityWord = asyncHandler(async (req: Request, res: Respons
     success: true,
     isPriority: newPriorityStatus,
     term: targetTerm,
+    topicTitle: wordTopicTitle,
     message: newPriorityStatus
-      ? `Đã thêm "${targetTerm}" vào ưu tiên ôn tập`
+      ? `Đã thêm "${targetTerm}" vào ưu tiên ôn tập (${wordTopicTitle})`
       : `Đã bỏ ưu tiên cho từ "${targetTerm}"`
   });
 });
@@ -696,7 +848,7 @@ export const removePriorityWord = asyncHandler(async (req: Request, res: Respons
   res.json({ success: true, isPriority: false, message: `Đã gỡ ưu tiên từ "${targetTerm}"` });
 });
 
-// @desc    Lấy toàn bộ từ trong danh sách ưu tiên ôn tập (kèm danh sách bài học gốc để lọc)
+// @desc    Lấy toàn bộ từ trong danh sách ưu tiên ôn tập (kèm danh sách bài học gốc để lọc, tự động sửa bài học cho các từ cũ)
 // @route   GET /api/vocab/priority/list
 export const getPriorityWords = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const authReq = req as AuthenticatedRequest;
@@ -714,6 +866,25 @@ export const getPriorityWords = asyncHandler(async (req: Request, res: Response)
 
   // Lọc các từ có isPriority === true
   const priorityWords = (reviewList.words as any[]).filter((w) => w.isPriority);
+
+  // Tự động quét và vá bài học cho các từ ưu tiên đang bị gán "Khác" hoặc "Trắc nghiệm"
+  let needSave = false;
+  for (const w of priorityWords) {
+    if (isGenericTopic(w.topicTitle)) {
+      const fixed = await resolveWordLesson(w.term, undefined, undefined, w.reading, w.meaning);
+      if (fixed.topicTitle && !isGenericTopic(fixed.topicTitle)) {
+        w.topicTitle = fixed.topicTitle;
+        if (fixed.topicId) w.topicId = fixed.topicId;
+        if (fixed.reading && !w.reading) w.reading = fixed.reading;
+        if (fixed.meaning && !w.meaning) w.meaning = fixed.meaning;
+        needSave = true;
+      }
+    }
+  }
+
+  if (needSave) {
+    await reviewList.save().catch(() => {});
+  }
   
   // Tổng hợp danh sách các bài học gốc để user lọc theo từng bài
   const topicSet = new Set<string>();

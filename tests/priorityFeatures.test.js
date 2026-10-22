@@ -133,6 +133,49 @@ async function runTests() {
       }
     });
 
+    // Test 6: Auto-detect lesson when adding/toggling priority without topicTitle
+    await test("Tự động dò bài học gốc khi lưu từ ưu tiên (/api/vocab/priority/add)", async () => {
+      // Seed một danh sách bài học có chứa từ mẫu "探索"
+      await VocabList.findOneAndUpdate(
+        { title: "Bài 99 - Khám Phá" },
+        {
+          title: "Bài 99 - Khám Phá",
+          words: [
+            {
+              term: "探索",
+              reading: "tànsuǒ",
+              meaning: "khám phá, tìm hiểu",
+              def: "khám phá, tìm hiểu",
+            },
+          ],
+        },
+        { upsert: true, new: true }
+      );
+
+      // Thêm từ "探索" vào ưu tiên NHƯNG KHÔNG TRUYỀN topicTitle (hoặc truyền "Khác")
+      const res = await request("/api/vocab/priority/add", {
+        method: "POST",
+        body: JSON.stringify({
+          term: "探索",
+        }),
+      });
+
+      if (res.status !== 200 || !res.data.success) {
+        throw new Error(`Status ${res.status}: ${JSON.stringify(res.data)}`);
+      }
+
+      if (res.data.topicTitle !== "Bài 99 - Khám Phá") {
+        throw new Error(`Mong đợi topicTitle 'Bài 99 - Khám Phá', nhưng nhận được '${res.data.topicTitle}'`);
+      }
+
+      // Dọn dẹp
+      await VocabList.deleteOne({ title: "Bài 99 - Khám Phá" });
+      await request("/api/vocab/priority/remove", {
+        method: "POST",
+        body: JSON.stringify({ term: "探索" }),
+      });
+    });
+
     console.log("\n=======================================================");
     console.log(`🎉 KẾT QUẢ: ${passed} PASSED, ${failed} FAILED`);
     console.log("=======================================================\n");
