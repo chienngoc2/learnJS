@@ -12,6 +12,7 @@ import chatbotRoutes from "./routes/chatbot.js";
 import authRoutes from "./routes/authRoutes.js";
 // import noteRoutes from "./routes/notes.js"; // Nếu bản V2 vẫn dùng thì mở ra
 import ragRoutes from "./routes/ragRoutes.js";
+import audioRoutes from "./routes/audioRoutes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
 import dotenv from "dotenv";
@@ -64,6 +65,7 @@ app.use("/api/vocab", vocabRoute);
 // app.use("/api/notes", noteRoutes);
 app.use("/api/rag", ragRoutes);
 app.use("/api/kanji", kanjiRoutes);
+app.use("/api/audio", audioRoutes);
 
 // Health check endpoint (dùng để FE kiểm tra local có đang chạy không)
 app.get("/api/health", (req, res) => {
@@ -93,6 +95,7 @@ if (fs.existsSync(distPath)) {
         chat: "/api/chat/chat",
         pronunciation: "/api/chat/evaluate-pronunciation",
         transcribe: "/api/chat/transcribe",
+        transcribeMp3: "/api/audio/transcribe-mp3",
         vocab: "/api/vocab/lists",
         kanji: "/api/kanji/all",
       },
