@@ -80,23 +80,33 @@ export async function transcribeAudioBuffer(
   console.log(`🎙️ [Gemini Audio Transcribe] Đang xử lý file: ${fileName} (${(audioBuffer.length / 1024 / 1024).toFixed(2)} MB, MIME: ${mimeType})`);
 
   const prompt = `
-Bạn là chuyên gia phiên âm và biên soạn giáo trình tiếng Trung (ưu tiên Phồn Thể - 繁體中文, TOCFL) kiêm dịch giả Trung - Việt.
-Nhiệm vụ của bạn:
-1. Hãy nghe kỹ file âm thanh đính kèm và trích xuất TOÀN BỘ kịch bản (transcript) chính xác từng từ bằng chữ Hán Phồn Thể (Traditional Chinese).
-2. Tách kịch bản thành từng phân đoạn/câu nói tự nhiên tương ứng với mốc thời gian (timestamp) bắt đầu và kết thúc của câu đó trong file âm thanh.
-3. Với MỖI phân đoạn/câu, BẮT BUỘC cung cấp:
-   - "text": Câu tiếng Trung Phồn Thể (繁體中文).
-   - "pinyin": Phiên âm Bính Âm có dấu thanh điệu chuẩn quốc tế.
-   - "meaningVi": Bản dịch nghĩa tiếng Việt chuẩn xác, tự nhiên, sát ngữ cảnh của câu đó.
-4. "fullText": Toàn bộ văn bản tiếng Trung Phồn Thể.
-5. "fullTranslation": Toàn bộ bản dịch tiếng Việt của bài.
-6. Ước tính tổng thời lượng audio (đơn vị: giây).
+Bạn là chuyên gia phiên âm và biên soạn giáo trình tiếng Trung (ưu tiên Phồn Thể - 繁體中文, TOCFL) kiêm dịch giả Trung - Việt cấp cao.
+Nhiệm vụ của bạn là nghe toàn bộ file âm thanh và trích xuất kịch bản hoàn chỉnh từ đầu đến cuối.
+
+QUY TẮC BẮT BUỘC TUÂN THỦ NGHIÊM NGẶT:
+1. PHIÊN ÂM TRỌN VẸN 100% TOÀN BỘ FILE TỪ GIÂY ĐẦU TIÊN (00:00) ĐẾN GIÂY CUỐI CÙNG:
+   - Câu đầu tiên (id: 0) BẮT BUỘC bắt đầu từ 0.0s (hoặc mốc giây đầu tiên có tiếng người nói). Tuyệt đối không được bỏ qua đoạn dạo đầu, intro nhạc, lời giới thiệu hay lời chào hỏi mở bài.
+   - BẮT BUỘC phiên âm liên tục, đầy đủ toàn bộ nội dung từ đầu tới cuối bài. TUYỆT ĐỐI KHÔNG ĐƯỢC CHỈ CHỌN MỘT ĐOẠN Ở GIỮA, không được nhảy cóc, không được tóm tắt.
+   - Câu cuối cùng BẮT BUỘC kéo dài đến hết nội dung nói cuối cùng của file âm thanh (lời kết bài, lời tạm biệt, lời cảm ơn).
+2. TÁCH THÀNH TỪNG CÂU TỰ NHIÊN ĐỂ HỌC TẬP (KARAOKE SCRIPT):
+   - Chia thành từng câu ngắn tự nhiên (khoảng 2 đến 8 giây mỗi câu) tương ứng với nhịp ngắt nghỉ của người nói để học viên có thể bấm nghe lại từng câu dễ dàng.
+   - "start" và "end" là số thực chính xác tính bằng giây (ví dụ: start: 0.0, end: 3.25).
+3. VỚI MỖI PHÂN ĐOẠN / CÂU TRONG "segments", CUNG CẤP ĐỦ:
+   - "id": Số thứ tự tăng dần từ 0, 1, 2...
+   - "start": Giây bắt đầu của câu (float).
+   - "end": Giây kết thúc của câu (float).
+   - "text": Câu tiếng Trung chuẩn xác bằng chữ Hán Phồn Thể (繁體中文).
+   - "pinyin": Phiên âm Bính Âm có dấu thanh điệu chuẩn quốc tế (ví dụ: "Nǐ hǎo, huānyíng...").
+   - "meaningVi": Bản dịch nghĩa tiếng Việt tự nhiên, sát nghĩa, chuẩn xác ngữ cảnh của câu.
+4. "fullText": Nối toàn bộ các câu tiếng Trung từ đầu đến cuối bài thành một đoạn văn hoàn chỉnh.
+5. "fullTranslation": Toàn bộ bản dịch tiếng Việt của cả bài nghe từ đầu đến cuối.
+6. "duration": Tổng thời lượng thực tế của file âm thanh (đơn vị: giây, khớp với end của câu cuối cùng).
 
 BẮT BUỘC trả về định dạng JSON thuần theo schema sau:
 {
-  "fullText": "Toàn bộ văn bản tiếng Trung Phồn Thể liền mạch",
-  "fullTranslation": "Toàn bộ bản dịch nghĩa tiếng Việt",
-  "duration": 35.5,
+  "fullText": "Toàn bộ văn bản tiếng Trung Phồn Thể liền mạch từ đầu đến cuối bài",
+  "fullTranslation": "Toàn bộ bản dịch nghĩa tiếng Việt đầy đủ từ đầu đến cuối bài",
+  "duration": 45.2,
   "segments": [
     {
       "id": 0,
@@ -119,10 +129,11 @@ Chỉ trả về JSON hợp lệ, không thêm bất kỳ văn bản markdown ha
   };
 
   const CANDIDATE_MODELS = [
-    "gemini-flash-lite-latest",
-    "gemini-3.5-flash-lite",
     "gemini-3.5-flash",
     "gemini-flash-latest",
+    "gemini-3.5-flash-lite",
+    "gemini-flash-lite-latest",
+    "gemini-3.8-flash",
   ];
 
   let lastError: any = null;
@@ -136,6 +147,7 @@ Chỉ trả về JSON hợp lệ, không thêm bất kỳ văn bản markdown ha
         generationConfig: {
           responseMimeType: "application/json",
           temperature: 0.1,
+          maxOutputTokens: 8192,
         },
       });
 
