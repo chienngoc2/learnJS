@@ -26,6 +26,17 @@ const handleAudioUpload = (req: any, res: any, next: any) => {
   });
 };
 
+// Route kiểm tra endpoint (dành cho trình duyệt hoặc healthcheck GET)
+router.get("/transcribe-mp3", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Endpoint bóc Script MP3 đang hoạt động bình thường! Vui lòng gửi yêu cầu POST kèm file âm thanh qua FormData (trường: 'file' hoặc 'audio').",
+    method: "POST",
+    supportedFormats: ["mp3", "m4a", "wav", "aac", "ogg", "flac"],
+    maxFileSize: "50MB",
+  });
+});
+
 // Route bóc script từ file MP3 - hoàn toàn miễn phí, 0 token, không dùng Groq
 router.post("/transcribe-mp3", optionalAuth, handleAudioUpload, transcribeMp3Handler);
 

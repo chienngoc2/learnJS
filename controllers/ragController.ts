@@ -76,7 +76,7 @@ export const generateQuizByTopic = asyncHandler(async (
   `;
 
   // Gọi Gemini sinh câu trả lời cuối cùng
-  const chatModel = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const chatModel = ai.getGenerativeModel({ model: "gemini-flash-lite-latest" });
   const aiResult = await chatModel.generateContent(finalPrompt);
 
   res.status(200).json({

@@ -1,54 +1,25 @@
-import fs from "fs";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import dotenv from "dotenv";
 import path from "path";
-import os from "os";
-import crypto from "crypto";
-import ffmpegPath from "ffmpeg-static";
-import ffmpeg from "fluent-ffmpeg";
-import { pipeline } from "@huggingface/transformers";
-import pkg from "wavefile";
 
-const { WaveFile } = pkg;
+dotenv.config();
 
-// Cấu hình đường dẫn ffmpeg binary tĩnh
-if (ffmpegPath) {
-  ffmpeg.setFfmpegPath(ffmpegPath);
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+
+export interface TranscriptionSegment {
+  id: number;
+  start: number;
+  end: number;
+  startFormatted: string;
+  endFormatted: string;
+  text: string;
 }
 
-// Singleton pipeline instance để không phải reload model mỗi lần gọi
-let transcriberInstance: any = null;
-let isLoadingModel = false;
-let modelLoadPromise: Promise<any> | null = null;
-
-export async function getTranscriber() {
-  if (transcriberInstance) {
-    return transcriberInstance;
-  }
-  if (isLoadingModel && modelLoadPromise) {
-    return await modelLoadPromise;
-  }
-
-  isLoadingModel = true;
-  modelLoadPromise = (async () => {
-    try {
-      console.log("🎙️ [Whisper Local] Đang khởi tạo mô hình Whisper (0 token, 100% offline)...");
-      const pipe = await pipeline(
-        "automatic-speech-recognition",
-        "onnx-community/whisper-base",
-        { dtype: "fp32" }
-      );
-      transcriberInstance = pipe;
-      console.log("✅ [Whisper Local] Khởi tạo mô hình thành công!");
-      return pipe;
-    } catch (err: any) {
-      console.error("❌ [Whisper Local] Lỗi khởi tạo mô hình:", err);
-      throw err;
-    } finally {
-      isLoadingModel = false;
-      modelLoadPromise = null;
-    }
-  })();
-
-  return await modelLoadPromise;
+export interface TranscriptionResult {
+  fullText: string;
+  duration: number;
+  segments: TranscriptionSegment[];
+  language: string;
 }
 
 // Hàm format giây thành mm:ss hoặc hh:mm:ss
@@ -69,149 +40,160 @@ export function formatTime(seconds: number): string {
 }
 
 /**
- * Chuyển đổi file âm thanh bất kỳ (MP3, M4A, AAC, WAV...) sang định dạng 16kHz mono WAV PCM
+ * Xác định MIME Type thích hợp dựa trên phần mở rộng file
  */
-export async function convertTo16kHzWav(inputBuffer: Buffer, originalExt: string = ".mp3"): Promise<string> {
-  const randomId = crypto.randomBytes(8).toString("hex");
-  const tempDir = os.tmpdir();
-  const inputPath = path.join(tempDir, `input_${randomId}${originalExt}`);
-  const outputPath = path.join(tempDir, `output_${randomId}.wav`);
-
-  // Ghi buffer vào file tạm
-  await fs.promises.writeFile(inputPath, inputBuffer);
-
-  return new Promise((resolve, reject) => {
-    ffmpeg(inputPath)
-      .toFormat("wav")
-      .audioChannels(1) // Mono
-      .audioFrequency(16000) // 16kHz chuẩn cho Whisper
-      .audioCodec("pcm_s16le")
-      .on("end", async () => {
-        // Dọn dẹp file input tạm ngay khi ffmpeg convert xong
-        try {
-          if (fs.existsSync(inputPath)) await fs.promises.unlink(inputPath);
-        } catch (e) {}
-        resolve(outputPath);
-      })
-      .on("error", async (err) => {
-        // Dọn dẹp file tạm khi lỗi
-        try {
-          if (fs.existsSync(inputPath)) await fs.promises.unlink(inputPath);
-          if (fs.existsSync(outputPath)) await fs.promises.unlink(outputPath);
-        } catch (e) {}
-        reject(new Error(`Lỗi chuyển đổi ffmpeg: ${err.message}`));
-      })
-      .save(outputPath);
-  });
-}
-
-export interface TranscriptionSegment {
-  id: number;
-  start: number;
-  end: number;
-  startFormatted: string;
-  endFormatted: string;
-  text: string;
-}
-
-export interface TranscriptionResult {
-  fullText: string;
-  duration: number;
-  segments: TranscriptionSegment[];
-  language: string;
+function getMimeType(fileName: string): string {
+  const ext = path.extname(fileName).toLowerCase();
+  switch (ext) {
+    case ".mp3":
+      return "audio/mp3";
+    case ".wav":
+      return "audio/wav";
+    case ".m4a":
+      return "audio/m4a";
+    case ".aac":
+      return "audio/aac";
+    case ".ogg":
+      return "audio/ogg";
+    case ".flac":
+      return "audio/flac";
+    case ".webm":
+      return "audio/webm";
+    default:
+      return "audio/mp3";
+  }
 }
 
 /**
- * Bóc Script (Transcription) hoàn toàn miễn phí chạy trực tiếp trên Server (0 token, 0 Groq)
+ * Trích xuất Script hoàn chỉnh từ file âm thanh sử dụng Google Gemini Flash (Miễn phí 100%, 0 Groq)
+ * Tối ưu hóa tuyệt đối cho Vercel Serverless (không cài thêm binary nặng)
  */
 export async function transcribeAudioBuffer(
   audioBuffer: Buffer,
   fileName: string = "audio.mp3",
   language: string = "chinese"
 ): Promise<TranscriptionResult> {
-  let wavFilePath: string | null = null;
+  const mimeType = getMimeType(fileName);
+  console.log(`🎙️ [Gemini Audio Transcribe] Đang xử lý file: ${fileName} (${(audioBuffer.length / 1024 / 1024).toFixed(2)} MB, MIME: ${mimeType})`);
 
-  try {
-    const ext = path.extname(fileName) || ".mp3";
-    console.log(`🎙️ [Whisper Local] Bắt đầu xử lý file: ${fileName} (${(audioBuffer.length / 1024 / 1024).toFixed(2)} MB)`);
+  const prompt = `
+Bạn là chuyên gia phiên âm và biên soạn giáo trình tiếng Trung (ưu tiên Phồn Thể - 繁體中文, TOCFL).
+Nhiệm vụ của bạn:
+1. Hãy nghe kỹ file âm thanh đính kèm và trích xuất TOÀN BỘ kịch bản (transcript) chính xác từng từ bằng chữ Hán Phồn Thể (Traditional Chinese).
+2. Tách kịch bản thành từng phân đoạn/câu nói tự nhiên tương ứng với mốc thời gian (timestamp) bắt đầu và kết thúc của câu đó trong file âm thanh.
+3. Ước tính tổng thời lượng audio (đơn vị: giây).
 
-    // 1. Chuyển đổi âm thanh sang 16kHz mono WAV
-    wavFilePath = await convertTo16kHzWav(audioBuffer, ext);
-
-    // 2. Đọc file WAV và chuyển đổi sang Float32Array chuẩn hoá
-    const wavBuffer = await fs.promises.readFile(wavFilePath);
-    const wav = new WaveFile(wavBuffer);
-    wav.toBitDepth("32f");
-    let audioSamples: any = wav.getSamples();
-
-    // Nếu là stereo (đa kênh), tính trung bình để gộp về mono
-    if (Array.isArray(audioSamples) && audioSamples.length > 1) {
-      const scalingFactor = Math.sqrt(2);
-      const mono = new Float32Array(audioSamples[0].length);
-      for (let i = 0; i < audioSamples[0].length; ++i) {
-        mono[i] = (audioSamples[0][i] + audioSamples[1][i]) / scalingFactor;
-      }
-      audioSamples = mono;
-    } else if (Array.isArray(audioSamples) && audioSamples.length === 1) {
-      audioSamples = audioSamples[0];
+BẮT BUỘC trả về định dạng JSON thuần theo schema sau:
+{
+  "fullText": "Toàn bộ văn bản tiếng Trung Phồn Thể liền mạch không ngắt đoạn",
+  "duration": 35.5,
+  "segments": [
+    {
+      "id": 0,
+      "start": 0.0,
+      "end": 3.5,
+      "text": "Câu tiếng Trung phân đoạn 1"
+    },
+    {
+      "id": 1,
+      "start": 3.5,
+      "end": 7.2,
+      "text": "Câu tiếng Trung phân đoạn 2"
     }
+  ]
+}
+Chỉ trả về JSON hợp lệ, không thêm bất kỳ văn bản markdown hay giải thích nào ngoài JSON.
+`;
 
-    // 3. Lấy instance pipeline Whisper
-    const transcriber = await getTranscriber();
+  const audioPart = {
+    inlineData: {
+      data: audioBuffer.toString("base64"),
+      mimeType: mimeType,
+    },
+  };
 
-    // 4. Thực thi nhận diện giọng nói
-    console.log(`🎙️ [Whisper Local] Đang nhận dạng tiếng Trung với Whisper ONNX...`);
-    const output = await transcriber(audioSamples, {
-      return_timestamps: true,
-      language: language,
-      task: "transcribe",
-    });
+  const CANDIDATE_MODELS = [
+    "gemini-flash-lite-latest",
+    "gemini-3.5-flash-lite",
+    "gemini-3.5-flash",
+    "gemini-flash-latest",
+  ];
 
-    const fullText = (output.text || "").trim();
-    const rawChunks = Array.isArray(output.chunks) ? output.chunks : [];
+  let lastError: any = null;
+  let responseText = "";
 
-    let totalDuration = 0;
-    const segments: TranscriptionSegment[] = rawChunks.map((chunk: any, index: number) => {
-      const start = Array.isArray(chunk.timestamp) ? chunk.timestamp[0] ?? 0 : 0;
-      const end = Array.isArray(chunk.timestamp) ? chunk.timestamp[1] ?? start : start;
-      if (end > totalDuration) totalDuration = end;
-
-      return {
-        id: index,
-        start: Number(start.toFixed(2)),
-        end: Number(end.toFixed(2)),
-        startFormatted: formatTime(start),
-        endFormatted: formatTime(end),
-        text: (chunk.text || "").trim(),
-      };
-    });
-
-    // Nếu không có chunk tách rời mà có fullText, tạo 1 segment duy nhất
-    if (segments.length === 0 && fullText.length > 0) {
-      segments.push({
-        id: 0,
-        start: 0,
-        end: totalDuration,
-        startFormatted: "00:00",
-        endFormatted: formatTime(totalDuration),
-        text: fullText,
+  for (const modelName of CANDIDATE_MODELS) {
+    try {
+      console.log(`🎙️ [Gemini Audio Transcribe] Thử model: ${modelName}...`);
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        generationConfig: {
+          responseMimeType: "application/json",
+          temperature: 0.1,
+        },
       });
-    }
 
-    console.log(`✅ [Whisper Local] Bóc script thành công! Tổng câu: ${segments.length}, độ dài: ${totalDuration.toFixed(1)}s`);
-
-    return {
-      fullText,
-      duration: Number(totalDuration.toFixed(2)),
-      segments,
-      language,
-    };
-  } finally {
-    // Luôn dọn dẹp file wav tạm trong ổ đĩa
-    if (wavFilePath && fs.existsSync(wavFilePath)) {
-      try {
-        await fs.promises.unlink(wavFilePath);
-      } catch (e) {}
+      const response = await model.generateContent([prompt, audioPart]);
+      responseText = response.response.text();
+      if (responseText) {
+        console.log(`✅ [Gemini Audio Transcribe] Model ${modelName} phản hồi thành công!`);
+        break;
+      }
+    } catch (err: any) {
+      console.warn(`⚠️ [Gemini Audio Transcribe] Model ${modelName} gặp sự cố: ${err.message}. Đang thử model tiếp theo...`);
+      lastError = err;
     }
   }
+
+  if (!responseText) {
+    throw new Error(`Tất cả các model Gemini đều không phản hồi: ${lastError?.message || "Lỗi không xác định"}`);
+  }
+
+  let parsed: any;
+  try {
+    parsed = JSON.parse(responseText);
+  } catch (err) {
+    // Làm sạch chuỗi JSON nếu có bọc markdown
+    const cleaned = responseText.replace(/```json/gi, "").replace(/```/g, "").trim();
+    parsed = JSON.parse(cleaned);
+  }
+
+  const fullText = (parsed.fullText || "").trim();
+  const rawSegments = Array.isArray(parsed.segments) ? parsed.segments : [];
+  let duration = typeof parsed.duration === "number" ? parsed.duration : 0;
+
+  const segments: TranscriptionSegment[] = rawSegments.map((item: any, index: number) => {
+    const start = typeof item.start === "number" ? item.start : 0;
+    const end = typeof item.end === "number" ? item.end : start;
+    if (end > duration) duration = end;
+
+    return {
+      id: item.id ?? index,
+      start: Number(start.toFixed(2)),
+      end: Number(end.toFixed(2)),
+      startFormatted: formatTime(start),
+      endFormatted: formatTime(end),
+      text: (item.text || "").trim(),
+    };
+  });
+
+  if (segments.length === 0 && fullText.length > 0) {
+    segments.push({
+      id: 0,
+      start: 0,
+      end: duration,
+      startFormatted: "00:00",
+      endFormatted: formatTime(duration),
+      text: fullText,
+    });
+  }
+
+  console.log(`✅ [Gemini Audio Transcribe] Thành công! Tổng câu: ${segments.length}, thời lượng: ${duration}s`);
+
+  return {
+    fullText,
+    duration: Number(duration.toFixed(2)),
+    segments,
+    language,
+  };
 }
