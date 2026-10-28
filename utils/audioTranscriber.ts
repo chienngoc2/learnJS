@@ -13,10 +13,13 @@ export interface TranscriptionSegment {
   startFormatted: string;
   endFormatted: string;
   text: string;
+  pinyin?: string;
+  meaningVi: string;
 }
 
 export interface TranscriptionResult {
   fullText: string;
+  fullTranslation?: string;
   duration: number;
   segments: TranscriptionSegment[];
   language: string;
@@ -77,28 +80,31 @@ export async function transcribeAudioBuffer(
   console.log(`🎙️ [Gemini Audio Transcribe] Đang xử lý file: ${fileName} (${(audioBuffer.length / 1024 / 1024).toFixed(2)} MB, MIME: ${mimeType})`);
 
   const prompt = `
-Bạn là chuyên gia phiên âm và biên soạn giáo trình tiếng Trung (ưu tiên Phồn Thể - 繁體中文, TOCFL).
+Bạn là chuyên gia phiên âm và biên soạn giáo trình tiếng Trung (ưu tiên Phồn Thể - 繁體中文, TOCFL) kiêm dịch giả Trung - Việt.
 Nhiệm vụ của bạn:
 1. Hãy nghe kỹ file âm thanh đính kèm và trích xuất TOÀN BỘ kịch bản (transcript) chính xác từng từ bằng chữ Hán Phồn Thể (Traditional Chinese).
 2. Tách kịch bản thành từng phân đoạn/câu nói tự nhiên tương ứng với mốc thời gian (timestamp) bắt đầu và kết thúc của câu đó trong file âm thanh.
-3. Ước tính tổng thời lượng audio (đơn vị: giây).
+3. Với MỖI phân đoạn/câu, BẮT BUỘC cung cấp:
+   - "text": Câu tiếng Trung Phồn Thể (繁體中文).
+   - "pinyin": Phiên âm Bính Âm có dấu thanh điệu chuẩn quốc tế.
+   - "meaningVi": Bản dịch nghĩa tiếng Việt chuẩn xác, tự nhiên, sát ngữ cảnh của câu đó.
+4. "fullText": Toàn bộ văn bản tiếng Trung Phồn Thể.
+5. "fullTranslation": Toàn bộ bản dịch tiếng Việt của bài.
+6. Ước tính tổng thời lượng audio (đơn vị: giây).
 
 BẮT BUỘC trả về định dạng JSON thuần theo schema sau:
 {
-  "fullText": "Toàn bộ văn bản tiếng Trung Phồn Thể liền mạch không ngắt đoạn",
+  "fullText": "Toàn bộ văn bản tiếng Trung Phồn Thể liền mạch",
+  "fullTranslation": "Toàn bộ bản dịch nghĩa tiếng Việt",
   "duration": 35.5,
   "segments": [
     {
       "id": 0,
       "start": 0.0,
       "end": 3.5,
-      "text": "Câu tiếng Trung phân đoạn 1"
-    },
-    {
-      "id": 1,
-      "start": 3.5,
-      "end": 7.2,
-      "text": "Câu tiếng Trung phân đoạn 2"
+      "text": "你好，歡迎收聽中文廣播。",
+      "pinyin": "nǐ hǎo, huān yíng shōu tīng zhōng wén guǎng bō.",
+      "meaningVi": "Xin chào, chào mừng các bạn đón nghe đài phát thanh tiếng Trung."
     }
   ]
 }
@@ -174,8 +180,12 @@ Chỉ trả về JSON hợp lệ, không thêm bất kỳ văn bản markdown ha
       startFormatted: formatTime(start),
       endFormatted: formatTime(end),
       text: (item.text || "").trim(),
+      pinyin: (item.pinyin || "").trim(),
+      meaningVi: (item.meaningVi || item.meaning || item.translation || "").trim(),
     };
   });
+
+  const fullTranslation = (parsed.fullTranslation || "").trim();
 
   if (segments.length === 0 && fullText.length > 0) {
     segments.push({
@@ -185,6 +195,8 @@ Chỉ trả về JSON hợp lệ, không thêm bất kỳ văn bản markdown ha
       startFormatted: "00:00",
       endFormatted: formatTime(duration),
       text: fullText,
+      pinyin: "",
+      meaningVi: fullTranslation,
     });
   }
 
@@ -192,6 +204,7 @@ Chỉ trả về JSON hợp lệ, không thêm bất kỳ văn bản markdown ha
 
   return {
     fullText,
+    fullTranslation,
     duration: Number(duration.toFixed(2)),
     segments,
     language,

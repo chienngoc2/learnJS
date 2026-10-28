@@ -73,6 +73,7 @@ export async function transcribeMp3Handler(req: Request, res: Response) {
         fileSize: fileSize,
         duration: result.duration,
         fullText: result.fullText,
+        fullTranslation: result.fullTranslation || "",
         segments: result.segments,
         totalSegments: result.segments.length,
         language: result.language,
