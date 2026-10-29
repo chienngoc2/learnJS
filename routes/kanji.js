@@ -9,9 +9,13 @@ import {
   deleteKanji,
   getKanjiById,
   deleteKanjiGroup,
+  getWordInsightsController,
 } from "../controllers/kanjiController.js";
 
 const router = express.Router();
+
+// GET  /api/kanji/insights?q=好                  → Tra cứu từ đồng nghĩa, gần nghĩa & ngữ cảnh
+router.get("/insights", getWordInsightsController);
 
 // GET  /api/kanji/search?q=一                   → Tra cứu theo từ khóa
 router.get("/search", searchKanji);

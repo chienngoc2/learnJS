@@ -76,8 +76,10 @@ async function runTests() {
     });
 
     await test("2. Database Connection Check", async () => {
-      if (mongoose.connection.readyState !== 1) {
-        await new Promise((r) => setTimeout(r, 2000));
+      let attempts = 0;
+      while (mongoose.connection.readyState !== 1 && attempts < 10) {
+        await new Promise((r) => setTimeout(r, 1000));
+        attempts++;
       }
       if (mongoose.connection.readyState !== 1) {
         throw new Error(`MongoDB not connected. ReadyState: ${mongoose.connection.readyState}`);
@@ -304,9 +306,23 @@ async function runTests() {
     });
 
     // -------------------------------------------------------------
-    // 7. Clean-up CI Test Data
+    // 7. Kanji Insights API (Synonyms, Near-Synonyms, Usages & Grammar)
     // -------------------------------------------------------------
-    await test("13. Clean-up CI Test Data", async () => {
+    await test("13. Kanji Insights API (/api/kanji/insights?q=走)", async () => {
+      const res = await request("/api/kanji/insights?q=%E8%B5%B0");
+      if (res.status !== 200 || !res.data.success || !res.data.data) {
+        throw new Error(`Kanji insights API failed: ${JSON.stringify(res.data)}`);
+      }
+      const data = res.data.data;
+      if (data.word !== "走" || data.pinyin !== "zǒu" || !data.synonyms || !data.usages) {
+        throw new Error(`Kanji insights returned unexpected payload: ${JSON.stringify(data)}`);
+      }
+    });
+
+    // -------------------------------------------------------------
+    // 8. Clean-up CI Test Data
+    // -------------------------------------------------------------
+    await test("14. Clean-up CI Test Data", async () => {
       const db = mongoose.connection.db;
       if (db) {
         await db.collection("vocablists").deleteMany({ title: /CI_TEST/ });

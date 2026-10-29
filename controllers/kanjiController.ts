@@ -7,6 +7,7 @@ import VocabList from "../models/VocabList.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { NotFoundError, ValidationError, ConflictError } from "../utils/errors.js";
 import { cleanPinyinForMatching } from "../utils/pinyinUtils.js";
+import { getWordInsights } from "../utils/wordInsights.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -614,3 +615,24 @@ export const deleteKanjiGroup = asyncHandler(async (
     deletedCount: result.deletedCount,
   });
 });
+
+// =========================================================================
+// 💡 7. TRA CỨU TỪ ĐỒNG NGHĨA, GẦN NGHĨA & CÁCH DÙNG NGỮ PHÁP (INSIGHTS)
+// @route GET /api/kanji/insights?q=好
+// =========================================================================
+export const getWordInsightsController = asyncHandler(async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const q = ((req.query.q || req.query.word) as string || "").trim();
+  if (!q) {
+    throw new ValidationError("Thiếu từ vựng tra cứu (q hoặc word)!");
+  }
+
+  const result = await getWordInsights(q);
+  res.json({
+    success: true,
+    data: result,
+  });
+});
+

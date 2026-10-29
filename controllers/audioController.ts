@@ -352,6 +352,12 @@ export async function streamAudioFileHandler(req: Request, res: Response) {
         if (!res.headersSent) res.status(500).end();
       });
 
+      req.on("close", () => {
+        try {
+          downloadStream.destroy();
+        } catch (e) {}
+      });
+
       downloadStream.pipe(res);
     } else {
       res.writeHead(200, {
@@ -364,6 +370,12 @@ export async function streamAudioFileHandler(req: Request, res: Response) {
       const downloadStream = bucket.openDownloadStream(objId);
       downloadStream.on("error", () => {
         if (!res.headersSent) res.status(500).end();
+      });
+
+      req.on("close", () => {
+        try {
+          downloadStream.destroy();
+        } catch (e) {}
       });
 
       downloadStream.pipe(res);
