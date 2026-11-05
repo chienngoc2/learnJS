@@ -326,9 +326,14 @@ export async function streamAudioFileHandler(req: Request, res: Response) {
     if (range) {
       const parts = range.replace(/bytes=/, "").split("-");
       const start = parseInt(parts[0], 10);
-      const end = parts[1] ? parseInt(parts[1], 10) : totalSize - 1;
+      let end = parts[1] ? parseInt(parts[1], 10) : totalSize - 1;
 
-      if (start >= totalSize || end >= totalSize) {
+      // Chuẩn HTTP RFC 7233: Nếu client yêu cầu end vượt quá totalSize thì kẹp lại bằng totalSize - 1
+      if (isNaN(end) || end >= totalSize) {
+        end = totalSize - 1;
+      }
+
+      if (start >= totalSize || start < 0 || start > end) {
         res.setHeader("Content-Range", `bytes */${totalSize}`);
         return res.status(416).end();
       }
@@ -441,47 +446,73 @@ export async function downloadAudioFileHandler(req: Request, res: Response) {
 
 /**
  * Xóa vĩnh viễn bài nghe VÀ file âm thanh nhị phân khỏi MongoDB
- * Đáp ứng yêu cầu: Khi bấm xóa bên cạnh bài nghe thì xóa cả trên MongoDB
+ * Đáp ứng yêu cầu: Khi bấm xóa bên cạnh bài nghe thì xóa triệt để cả document lẫn chunks nhị phân trên MongoDB
  */
 export async function deleteAudioLessonHandler(req: Request, res: Response) {
   try {
-    const rawId = req.params.id;
-    const id = Array.isArray(rawId) ? rawId[0] : String(rawId || "");
-    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ success: false, error: "Mã bài học ID không hợp lệ." });
+    const rawId = req.params.id || req.params.fileId;
+    const queryGridFsId = req.query.gridFsFileId || req.query.fileId || req.body?.gridFsFileId || req.body?.fileId;
+    
+    let candidateId = Array.isArray(rawId) ? rawId[0] : String(rawId || "");
+    let fallbackGridFsId = Array.isArray(queryGridFsId) ? queryGridFsId[0] : String(queryGridFsId || "");
+
+    // Ưu tiên ObjectId hợp lệ
+    let targetId: string | null = null;
+    if (mongoose.Types.ObjectId.isValid(candidateId)) {
+      targetId = candidateId;
+    } else if (mongoose.Types.ObjectId.isValid(fallbackGridFsId)) {
+      targetId = fallbackGridFsId;
+    }
+
+    if (!targetId) {
+      return res.status(400).json({
+        success: false,
+        error: "Mã bài học hoặc file ID không hợp lệ.",
+      });
     }
 
     const bucket = getAudioBucket();
     let gridFsIdToDelete: mongoose.Types.ObjectId | null = null;
     let deletedTitle = "";
 
-    // 1. Tìm và xóa trong collection AudioLesson
-    const lesson = await AudioLesson.findById(id);
-    if (lesson) {
-      gridFsIdToDelete = lesson.gridFsFileId;
-      deletedTitle = lesson.title;
-      await AudioLesson.findByIdAndDelete(id);
-      console.log(`🗑️ Đã xóa AudioLesson "${deletedTitle}" (ID: ${id})`);
+    const objId = new mongoose.Types.ObjectId(targetId);
+
+    // 1. Tìm trong collection AudioLesson (theo _id hoặc gridFsFileId)
+    const lessons = await AudioLesson.find({
+      $or: [{ _id: objId }, { gridFsFileId: objId }],
+    });
+
+    if (lessons.length > 0) {
+      deletedTitle = lessons[0].title || "";
+      gridFsIdToDelete = lessons[0].gridFsFileId;
+
+      // Xóa tất cả document AudioLesson liên quan
+      await AudioLesson.deleteMany({
+        $or: [{ _id: objId }, { gridFsFileId: gridFsIdToDelete || objId }],
+      });
+      console.log(`🗑️ Đã xóa ${lessons.length} document AudioLesson "${deletedTitle}" liên quan đến ID: ${targetId}`);
     } else {
-      // Trường hợp id truyền vào chính là gridFsFileId
-      const lessonByGridFs = await AudioLesson.findOne({ gridFsFileId: new mongoose.Types.ObjectId(id) });
-      if (lessonByGridFs) {
-        gridFsIdToDelete = lessonByGridFs.gridFsFileId;
-        deletedTitle = lessonByGridFs.title;
-        await AudioLesson.findByIdAndDelete(lessonByGridFs._id);
-        console.log(`🗑️ Đã xóa AudioLesson qua GridFs ID "${deletedTitle}" (ID: ${lessonByGridFs._id})`);
-      } else {
-        gridFsIdToDelete = new mongoose.Types.ObjectId(id);
-      }
+      // Trường hợp ID truyền vào trực tiếp là fileId của GridFS
+      gridFsIdToDelete = objId;
     }
 
     // 2. Xóa triệt để các chunks nhị phân trong MongoDB GridFS
     if (gridFsIdToDelete) {
       try {
-        await bucket.delete(gridFsIdToDelete);
-        console.log(`🗑️ Đã xóa vĩnh viễn chunks nhị phân GridFS: ${gridFsIdToDelete}`);
+        const existingFiles = await bucket.find({ _id: gridFsIdToDelete }).toArray();
+        if (existingFiles && existingFiles.length > 0) {
+          deletedTitle = deletedTitle || existingFiles[0].filename || "âm thanh";
+          await bucket.delete(gridFsIdToDelete);
+          console.log(`🗑️ Đã xóa vĩnh viễn file nhị phân GridFS: ${gridFsIdToDelete}`);
+        } else {
+          // Phòng ngừa orphan chunks
+          if (mongoose.connection.db) {
+            await mongoose.connection.db.collection("audio_lessons.chunks").deleteMany({ files_id: gridFsIdToDelete });
+            await mongoose.connection.db.collection("audio_lessons.files").deleteOne({ _id: gridFsIdToDelete });
+          }
+        }
       } catch (gridErr: any) {
-        console.warn(`⚠️ File GridFS ${gridFsIdToDelete} có thể đã được dọn trước đó:`, gridErr.message);
+        console.warn(`⚠️ Lỗi khi xóa file GridFS ${gridFsIdToDelete}:`, gridErr.message);
       }
     }
 

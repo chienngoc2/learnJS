@@ -59,7 +59,9 @@ router.get("/files/:fileId", streamAudioFileHandler);
 // Route tải file MP3 nhị phân từ MongoDB về máy tính / điện thoại
 router.get("/download/:fileId", downloadAudioFileHandler);
 
-// Route xóa bài học VÀ xóa triệt để file nhị phân trong MongoDB
+// Route xóa bài học VÀ xóa triệt để file nhị phân trong MongoDB (hỗ trợ cả xóa theo lessonId lẫn fileId)
 router.delete("/lessons/:id", optionalAuth, deleteAudioLessonHandler);
+router.delete("/files/:fileId", optionalAuth, deleteAudioLessonHandler);
+router.delete("/:id", optionalAuth, deleteAudioLessonHandler);
 
 export default router;

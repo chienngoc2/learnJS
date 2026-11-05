@@ -1,10 +1,12 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import Groq from "groq-sdk";
 import dotenv from "dotenv";
 import path from "path";
 
 dotenv.config();
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY }) : null;
 
 export interface TranscriptionSegment {
   id: number;
@@ -49,7 +51,7 @@ function getMimeType(fileName: string): string {
   const ext = path.extname(fileName).toLowerCase();
   switch (ext) {
     case ".mp3":
-      return "audio/mp3";
+      return "audio/mpeg";
     case ".wav":
       return "audio/wav";
     case ".m4a":
@@ -63,7 +65,7 @@ function getMimeType(fileName: string): string {
     case ".webm":
       return "audio/webm";
     default:
-      return "audio/mp3";
+      return "audio/mpeg";
   }
 }
 
@@ -85,6 +87,7 @@ Nhiệm vụ của bạn là nghe toàn bộ file âm thanh và trích xuất k�
 
 QUY TẮC BẮT BUỘC TUÂN THỦ NGHIÊM NGẶT:
 1. PHIÊN ÂM TRỌN VẸN 100% TOÀN BỘ FILE TỪ GIÂY ĐẦU TIÊN (00:00) ĐẾN GIÂY CUỐI CÙNG:
+   - Với mọi bài nghe bất kể độ dài ngắn (kể cả bài dài 3 phút, 5 phút, 10 phút, 15 phút...), BẮT BUỘC phiên âm liên tục, trọn vẹn đến hết giây cuối cùng của bài nghe. TUYỆT ĐỐI KHÔNG ĐƯỢC DỪNG Ở GIỮA CHỪNG, KHÔNG ĐƯỢC CHỈ BÓC NỬA ĐẦU BÀI.
    - Câu đầu tiên (id: 0) BẮT BUỘC bắt đầu từ 0.0s (hoặc mốc giây đầu tiên có tiếng người nói). Tuyệt đối không được bỏ qua đoạn dạo đầu, intro nhạc, lời giới thiệu hay lời chào hỏi mở bài.
    - BẮT BUỘC phiên âm liên tục, đầy đủ toàn bộ nội dung từ đầu tới cuối bài. TUYỆT ĐỐI KHÔNG ĐƯỢC CHỈ CHỌN MỘT ĐOẠN Ở GIỮA, không được nhảy cóc, không được tóm tắt.
    - Câu cuối cùng BẮT BUỘC kéo dài đến hết nội dung nói cuối cùng của file âm thanh (lời kết bài, lời tạm biệt, lời cảm ơn).
@@ -129,9 +132,11 @@ Chỉ trả về JSON hợp lệ, không thêm bất kỳ văn bản markdown ha
   };
 
   const CANDIDATE_MODELS = [
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite",
+    "gemini-flash-lite-latest",
     "gemini-3.5-flash",
     "gemini-3.8-flash",
-    "gemini-3.5-flash-lite",
     "gemini-flash-latest",
   ];
 
@@ -159,6 +164,51 @@ Chỉ trả về JSON hợp lệ, không thêm bất kỳ văn bản markdown ha
     } catch (err: any) {
       console.warn(`⚠️ [Gemini Audio Transcribe] Model ${modelName} gặp sự cố: ${err.message}. Đang thử model tiếp theo...`);
       lastError = err;
+    }
+  }
+
+  // Fallback sang Groq Whisper nếu toàn bộ model Gemini bị giới hạn hạn ngạch (429) hoặc lỗi mạng
+  if (!responseText && groq) {
+    console.log(`🎙️ [Groq Whisper Fallback] Đang chuyển sang bóc tách bằng Groq Whisper-large-v3-turbo...`);
+    try {
+      const ext = path.extname(fileName) || ".mp3";
+      const file = new File([new Uint8Array(audioBuffer)], fileName || `audio${ext}`, { type: mimeType });
+      const whisperRes: any = await groq.audio.transcriptions.create({
+        file,
+        model: "whisper-large-v3-turbo",
+        response_format: "verbose_json",
+        language: language === "chinese" ? "zh" : undefined,
+      });
+
+      const fullText = (whisperRes.text || "").trim();
+      const rawSegments = whisperRes.segments || [];
+      const duration = typeof whisperRes.duration === "number" ? whisperRes.duration : 0;
+
+      const segments: TranscriptionSegment[] = rawSegments.map((item: any, index: number) => {
+        const start = typeof item.start === "number" ? item.start : 0;
+        const end = typeof item.end === "number" ? item.end : start;
+        return {
+          id: item.id ?? index,
+          start: Number(start.toFixed(2)),
+          end: Number(end.toFixed(2)),
+          startFormatted: formatTime(start),
+          endFormatted: formatTime(end),
+          text: (item.text || "").trim(),
+          pinyin: "",
+          meaningVi: "",
+        };
+      });
+
+      console.log(`✅ [Groq Whisper Fallback] Thành công! Tổng câu: ${segments.length}, thời lượng: ${duration}s`);
+      return {
+        fullText,
+        fullTranslation: "",
+        duration: Number(duration.toFixed(2)),
+        segments,
+        language,
+      };
+    } catch (groqErr: any) {
+      console.warn("⚠️ [Groq Whisper Fallback] Thất bại:", groqErr.message);
     }
   }
 
