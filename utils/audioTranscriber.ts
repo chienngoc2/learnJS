@@ -1,12 +1,13 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import Groq from "groq-sdk";
+import { Groq } from "groq-sdk";
 import dotenv from "dotenv";
 import path from "path";
 
 dotenv.config();
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY }) : null;
+const GroqConstructor: any = (Groq as any)?.Groq || Groq;
+const groq = process.env.GROQ_API_KEY ? new GroqConstructor({ apiKey: process.env.GROQ_API_KEY }) : null;
 
 export interface TranscriptionSegment {
   id: number;
