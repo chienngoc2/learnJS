@@ -8,6 +8,7 @@ import { asyncHandler } from "../middleware/errorHandler.js";
 import { NotFoundError, ValidationError, ConflictError } from "../utils/errors.js";
 import { cleanPinyinForMatching } from "../utils/pinyinUtils.js";
 import { getWordInsights } from "../utils/wordInsights.js";
+import { decomposeWordWithRadicals, getAll214Radicals } from "../utils/radicalDecomposer.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -630,6 +631,36 @@ export const getWordInsightsController = asyncHandler(async (
   }
 
   const result = await getWordInsights(q);
+  res.json({
+    success: true,
+    data: result,
+  });
+});
+
+// =========================================================================
+// 🧩 8. BẢNG 214 BỘ THỦ KHANG HY & PHÂN TÁCH BỘ THỦ + CÂU CHUYỆN AI
+// =========================================================================
+export const getRadicals214Controller = asyncHandler(async (
+  _req: Request,
+  res: Response,
+): Promise<void> => {
+  const radicals = getAll214Radicals();
+  res.json({
+    success: true,
+    total: radicals.length,
+    data: radicals,
+  });
+});
+
+export const decomposeWordController = asyncHandler(async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const word = String(req.query.word || req.query.q || req.body?.word || "").trim();
+  if (!word) {
+    throw new ValidationError("Thiếu từ vựng cần phân tích bộ thủ!");
+  }
+  const result = await decomposeWordWithRadicals(word);
   res.json({
     success: true,
     data: result,

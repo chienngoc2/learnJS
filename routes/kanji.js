@@ -10,9 +10,18 @@ import {
   getKanjiById,
   deleteKanjiGroup,
   getWordInsightsController,
+  getRadicals214Controller,
+  decomposeWordController,
 } from "../controllers/kanjiController.js";
 
 const router = express.Router();
+
+// GET  /api/kanji/radicals-214                  → Lấy đầy đủ 214 bộ thủ Khang Hy
+router.get("/radicals-214", getRadicals214Controller);
+
+// GET/POST /api/kanji/decompose?word=休         → Tách chữ thành bộ thủ màu sắc + câu chuyện AI
+router.get("/decompose", decomposeWordController);
+router.post("/decompose", decomposeWordController);
 
 // GET  /api/kanji/insights?q=好                  → Tra cứu từ đồng nghĩa, gần nghĩa & ngữ cảnh
 router.get("/insights", getWordInsightsController);

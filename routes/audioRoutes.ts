@@ -64,4 +64,83 @@ router.delete("/lessons/:id", optionalAuth, deleteAudioLessonHandler);
 router.delete("/files/:fileId", optionalAuth, deleteAudioLessonHandler);
 router.delete("/:id", optionalAuth, deleteAudioLessonHandler);
 
+// Route đọc & dịch nhanh câu / từ / đoạn văn bản như Google Translate
+router.post("/translate-text", optionalAuth, async (req, res) => {
+  try {
+    const { text, direction = "auto" } = req.body || {};
+    const cleanText = String(text || "").trim();
+    if (!cleanText) {
+      return res.status(400).json({ success: false, error: "Vui lòng nhập hoặc dán nội dung cần dịch." });
+    }
+
+    const { withGeminiRotation } = await import("../utils/geminiClient.js");
+    const prompt = `
+Bạn là hệ thống dịch thuật và phát âm tiếng Trung Phồn Thể (繁體中文 - Đài Loan/TOCFL) ⇄ Tiếng Việt chuẩn xác như Google Dịch.
+Nhiệm vụ: Phân tích và dịch đoạn văn bản sau (từ đơn, câu hoặc đoạn văn):
+"""
+${cleanText}
+"""
+Chiều dịch yêu cầu: "${direction}" ("auto": tự nhận diện Trung->Việt hoặc Việt->Trung; "zh-vi": Trung->Việt; "vi-zh": Việt->Trung).
+
+TRẢ VỀ JSON THUẦN HỢP LỆ THEO SCHEMA:
+{
+  "detectedLang": "zh" hoặc "vi",
+  "chineseText": "Văn bản tiếng Trung Phồn Thể hoàn chỉnh",
+  "pinyin": "Phiên âm Pinyin có dấu thanh điệu đầy đủ của toàn đoạn",
+  "vietnameseText": "Bản dịch tiếng Việt tự nhiên, sát nghĩa",
+  "sentences": [
+    {
+      "text": "Từng câu tiếng Trung Phồn Thể",
+      "pinyin": "Pinyin của câu đó",
+      "meaningVi": "Nghĩa tiếng Việt của câu đó"
+    }
+  ],
+  "keywords": [
+    {
+      "term": "Từ vựng nổi bật (chữ Hán Phồn Thể)",
+      "pinyin": "Pinyin",
+      "meaning": "Nghĩa tiếng Việt ngắn gọn"
+    }
+  ]
+}
+Chỉ trả về JSON hợp lệ, không thêm markdown.
+`;
+
+    const aiText = await withGeminiRotation(async (client) => {
+      const models = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-lite-latest"];
+      let lastErr: any;
+      for (const m of models) {
+        try {
+          const model = client.getGenerativeModel({
+            model: m,
+            generationConfig: {
+              responseMimeType: "application/json",
+              temperature: 0.2,
+            },
+          });
+          const out = await model.generateContent(prompt);
+          const txt = out.response.text();
+          if (txt) return txt;
+        } catch (err: any) {
+          lastErr = err;
+          if (String(err?.message || "").includes("429") || String(err?.message || "").toLowerCase().includes("quota")) {
+            throw err;
+          }
+        }
+      }
+      throw lastErr || new Error("Không thể kết nối AI dịch thuật.");
+    });
+
+    const cleaned = aiText.replace(/```json/gi, "").replace(/```/g, "").trim();
+    const parsed = JSON.parse(cleaned);
+    return res.status(200).json({ success: true, data: parsed });
+  } catch (err: any) {
+    console.error("❌ [API TranslateText] Lỗi:", err);
+    return res.status(500).json({
+      success: false,
+      error: "Không thể dịch đoạn văn bản: " + (err.message || "Lỗi server"),
+    });
+  }
+});
+
 export default router;

@@ -1,0 +1,24 @@
+name: Keep Render Backend Awake
+
+on:
+  schedule:
+    # Ping mỗi 5 phút để Render Free Tier không bị sleep (sau 15 phút không traffic)
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping-render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Render Health Endpoint
+        run: |
+          TARGET_URL="${{ vars.RENDER_BACKEND_URL || secrets.RENDER_BACKEND_URL }}"
+          if [ -z "$TARGET_URL" ]; then
+            echo "RENDER_BACKEND_URL chưa được cấu hình trong GitHub Actions Variables/Secrets. Bỏ qua."
+            exit 0
+          fi
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "${TARGET_URL%/}/api/health")
+          echo "Ping ${TARGET_URL%/}/api/health -> HTTP $STATUS"
+          if [ "$STATUS" -ge 500 ]; then
+            exit 1
+          fi

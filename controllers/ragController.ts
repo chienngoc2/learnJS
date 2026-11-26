@@ -2,9 +2,9 @@
 
 import type { Request, Response } from "express"; 
 import { Pinecone } from "@pinecone-database/pinecone";
-import { GoogleGenerativeAI } from "@google/generative-ai"; 
 import VocabList from "../models/VocabList.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
+import { withGeminiRotation } from "../utils/geminiClient.js";
 
 // 1. Định nghĩa Interface cho Request Body để TypeScript quản lý chặt chẽ
 interface QuizRequestBody {
@@ -13,7 +13,6 @@ interface QuizRequestBody {
 }
 
 const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY as string });
-const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
 
 export const generateQuizByTopic = asyncHandler(async (
   req: Request<{}, {}, QuizRequestBody>,
@@ -75,12 +74,15 @@ export const generateQuizByTopic = asyncHandler(async (
     Yêu cầu cụ thể của học viên: ${userMessage}
   `;
 
-  // Gọi Gemini sinh câu trả lời cuối cùng
-  const chatModel = ai.getGenerativeModel({ model: "gemini-flash-lite-latest" });
-  const aiResult = await chatModel.generateContent(finalPrompt);
+  // Gọi Gemini sinh câu trả lời cuối cùng (tự động xoay khóa nếu hết quota)
+  const replyText = await withGeminiRotation(async (client) => {
+    const chatModel = client.getGenerativeModel({ model: "gemini-flash-lite-latest" });
+    const aiResult = await chatModel.generateContent(finalPrompt);
+    return aiResult.response.text();
+  });
 
   res.status(200).json({
     success: true,
-    reply: aiResult.response.text(),
+    reply: replyText,
   });
 });

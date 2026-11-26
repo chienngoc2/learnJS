@@ -67,9 +67,15 @@ app.use("/api/rag", ragRoutes);
 app.use("/api/kanji", kanjiRoutes);
 app.use("/api/audio", audioRoutes);
 
-// Health check endpoint (dùng để FE kiểm tra local có đang chạy không)
+// Health check endpoint (dùng cho FE, Render healthcheck và Bot Keep-Alive 5 phút/lần)
 app.get("/api/health", (req, res) => {
-  res.status(200).json({ status: "ok", source: "local" });
+  res.status(200).json({
+    status: "ok",
+    source: process.env.RENDER ? "render" : "local",
+    region: process.env.RENDER_REGION || "local",
+    uptimeSeconds: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // Phục vụ các tệp tĩnh và fallback định tuyến của Frontend khi có thư mục build 'dist'
@@ -140,10 +146,22 @@ if (!process.env.VERCEL && process.env.NODE_ENV !== "test" && isMainModule) {
     =================================================
     🚀 SERVER ĐÃ KHỞI ĐỘNG THÀNH CÔNG!
     =================================================
-    🌍 Chế độ: DEVELOPMENT/PRODUCTION (Non-Vercel)
+    🌍 Chế độ: ${process.env.RENDER ? "RENDER PRODUCTION (" + (process.env.RENDER_REGION || "singapore") + ")" : "DEVELOPMENT/PRODUCTION"}
     🔗 URL: http://localhost:${PORT}
     =================================================
     `);
+
+    // Bot Keep-Alive nội bộ: Tự động ping /api/health mỗi 5 phút khi chạy trên Render
+    const externalUrl = process.env.RENDER_EXTERNAL_URL;
+    if (externalUrl) {
+      const pingUrl = `${externalUrl.replace(/\/$/, "")}/api/health`;
+      console.log(`🤖 [Keep-Alive Bot] Đã bật chu kỳ ping 5 phút tới: ${pingUrl}`);
+      setInterval(() => {
+        fetch(pingUrl)
+          .then((r) => console.log(`🤖 [Keep-Alive Ping] ${pingUrl} -> ${r.status}`))
+          .catch((e) => console.warn(`🤖 [Keep-Alive Ping] Lỗi:`, e.message));
+      }, 5 * 60 * 1000);
+    }
   });
 }
 

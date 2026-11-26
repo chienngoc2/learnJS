@@ -1,11 +1,10 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Groq } from "groq-sdk";
 import dotenv from "dotenv";
 import path from "path";
+import { withGeminiRotation } from "./geminiClient.js";
 
 dotenv.config();
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 const GroqConstructor: any = (Groq as any)?.Groq || Groq;
 const groq = process.env.GROQ_API_KEY ? new GroqConstructor({ apiKey: process.env.GROQ_API_KEY }) : null;
 
@@ -147,21 +146,23 @@ Chỉ trả về JSON hợp lệ, không thêm bất kỳ văn bản markdown ha
   for (const modelName of CANDIDATE_MODELS) {
     try {
       console.log(`🎙️ [Gemini Audio Transcribe] Thử model: ${modelName}...`);
-      const model = genAI.getGenerativeModel({
-        model: modelName,
-        generationConfig: {
-          responseMimeType: "application/json",
-          temperature: 0.1,
-          maxOutputTokens: 65536,
-        },
+      responseText = await withGeminiRotation(async (client, _apiKey, keyIndex) => {
+        const model = client.getGenerativeModel({
+          model: modelName,
+          generationConfig: {
+            responseMimeType: "application/json",
+            temperature: 0.1,
+            maxOutputTokens: 65536,
+          },
+        });
+        const response = await model.generateContent([prompt, audioPart]);
+        const txt = response.response.text();
+        if (txt) {
+          console.log(`✅ [Gemini Audio Transcribe] Model ${modelName} (Key #${keyIndex}) phản hồi thành công!`);
+        }
+        return txt;
       });
-
-      const response = await model.generateContent([prompt, audioPart]);
-      responseText = response.response.text();
-      if (responseText) {
-        console.log(`✅ [Gemini Audio Transcribe] Model ${modelName} phản hồi thành công!`);
-        break;
-      }
+      if (responseText) break;
     } catch (err: any) {
       console.warn(`⚠️ [Gemini Audio Transcribe] Model ${modelName} gặp sự cố: ${err.message}. Đang thử model tiếp theo...`);
       lastError = err;

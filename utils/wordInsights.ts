@@ -1,9 +1,7 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from "dotenv";
+import { withGeminiRotation } from "./geminiClient.js";
 
 dotenv.config();
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 export interface SynonymItem {
   word: string;
@@ -391,16 +389,17 @@ Trả về định dạng JSON thuần hợp lệ theo schema:
 Chỉ trả về JSON hợp lệ, không giải thích gì thêm.
 `;
 
-    const model = genAI.getGenerativeModel({
-      model: "gemini-3.5-flash",
-      generationConfig: {
-        responseMimeType: "application/json",
-        temperature: 0.2,
-      },
+    const text = await withGeminiRotation(async (client) => {
+      const model = client.getGenerativeModel({
+        model: "gemini-3.5-flash-lite",
+        generationConfig: {
+          responseMimeType: "application/json",
+          temperature: 0.2,
+        },
+      });
+      const aiRes = await model.generateContent(prompt);
+      return aiRes.response.text();
     });
-
-    const aiRes = await model.generateContent(prompt);
-    const text = aiRes.response.text();
     const parsed = JSON.parse(text);
 
     const result: WordInsightResult = {

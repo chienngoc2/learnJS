@@ -192,7 +192,7 @@ const normalizeWordsList = (list: any[]): any[] => {
   }).filter((w: any) => w !== null && w.term);
 };
 
-// @desc    Lưu bài học mới
+// @desc    Lưu bài học mới (Nếu trùng tên bài cũ của user thì tự động gộp từ mới vào bài cũ)
 // @route   POST /api/vocab/save
 export const createList = asyncHandler(async (
   req: Request<{}, {}, VocabRequestBody>, 
@@ -202,16 +202,59 @@ export const createList = asyncHandler(async (
   const userId = authReq.user?._id;
   const { title, list } = req.body;
 
-  if (!title || !list || !Array.isArray(list)) {
+  const trimmedTitle = typeof title === "string" ? title.trim() : "";
+  if (!trimmedTitle || !list || !Array.isArray(list)) {
     throw new ValidationError("Thiếu tiêu đề hoặc danh sách từ vựng!");
   }
 
   const normalizedWords = normalizeWordsList(list);
+  const escapedTitle = trimmedTitle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const ownerFilter = userId
+    ? { userId }
+    : { $or: [{ userId: { $exists: false } }, { userId: null }] };
 
-  console.log(`📦 [VocabSave] Lưu bộ "${title}" với ${normalizedWords.length} từ vựng (raw: ${list.length} items)`);
+  const existingList = await VocabList.findOne({
+    ...ownerFilter,
+    title: { $regex: new RegExp(`^${escapedTitle}$`, "i") },
+  });
+
+  if (existingList) {
+    const existingMap = new Map<string, number>();
+    (existingList.words as any[]).forEach((w, idx) => {
+      if (w?.term) existingMap.set(String(w.term).trim(), idx);
+    });
+
+    let addedCount = 0;
+    let updatedCount = 0;
+    for (const newWord of normalizedWords) {
+      const key = String(newWord.term).trim();
+      if (existingMap.has(key)) {
+        const idx = existingMap.get(key)!;
+        (existingList.words as any[])[idx] = {
+          ...(existingList.words as any[])[idx],
+          ...newWord,
+        };
+        updatedCount++;
+      } else {
+        (existingList.words as any[]).push(newWord);
+        addedCount++;
+      }
+    }
+
+    await existingList.save();
+    syncVocabListToPinecone(existingList._id.toString());
+
+    console.log(
+      `📦 [VocabSave] Trùng tên bài "${trimmedTitle}" -> Đã gộp vào bài cũ (thêm ${addedCount}, cập nhật ${updatedCount})`
+    );
+    res.json({ success: true, merged: true, data: existingList });
+    return;
+  }
+
+  console.log(`📦 [VocabSave] Lưu bộ mới "${trimmedTitle}" với ${normalizedWords.length} từ vựng (raw: ${list.length} items)`);
 
   const newList = new VocabList({
-    title: title,
+    title: trimmedTitle,
     words: normalizedWords,
     userId: userId
   });
@@ -220,7 +263,7 @@ export const createList = asyncHandler(async (
   // Tự động đồng bộ Pinecone (chạy ngầm)
   syncVocabListToPinecone(newList._id.toString());
 
-  res.json({ success: true, data: newList });
+  res.json({ success: true, merged: false, data: newList });
 });
 
 // @desc    Lưu hoặc cập nhật bài "Cần ôn tập"
