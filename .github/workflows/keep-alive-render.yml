@@ -12,11 +12,7 @@ jobs:
     steps:
       - name: Ping Render Health Endpoint
         run: |
-          TARGET_URL="${{ vars.RENDER_BACKEND_URL || secrets.RENDER_BACKEND_URL }}"
-          if [ -z "$TARGET_URL" ]; then
-            echo "RENDER_BACKEND_URL chưa được cấu hình trong GitHub Actions Variables/Secrets. Bỏ qua."
-            exit 0
-          fi
+          TARGET_URL="${{ vars.RENDER_BACKEND_URL || secrets.RENDER_BACKEND_URL || 'https://ai-sensei-server.onrender.com' }}"
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "${TARGET_URL%/}/api/health")
           echo "Ping ${TARGET_URL%/}/api/health -> HTTP $STATUS"
           if [ "$STATUS" -ge 500 ]; then

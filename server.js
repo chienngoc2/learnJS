@@ -152,7 +152,7 @@ if (!process.env.VERCEL && process.env.NODE_ENV !== "test" && isMainModule) {
     `);
 
     // Bot Keep-Alive nội bộ: Tự động ping /api/health mỗi 5 phút khi chạy trên Render
-    const externalUrl = process.env.RENDER_EXTERNAL_URL;
+    const externalUrl = process.env.RENDER_EXTERNAL_URL || (process.env.RENDER ? "https://ai-sensei-server.onrender.com" : "");
     if (externalUrl) {
       const pingUrl = `${externalUrl.replace(/\/$/, "")}/api/health`;
       console.log(`🤖 [Keep-Alive Bot] Đã bật chu kỳ ping 5 phút tới: ${pingUrl}`);
