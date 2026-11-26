@@ -47,13 +47,18 @@ function attachRadicalColors(rawRadicals: any[]): DecomposedRadical[] {
   });
 }
 
-export async function decomposeWordWithRadicals(rawWord: string): Promise<WordDecompositionResult> {
+export async function decomposeWordWithRadicals(
+  rawWord: string,
+  forceRefresh = false
+): Promise<WordDecompositionResult> {
   const word = (rawWord || "").trim();
   if (!word) {
     return { word: "", characters: [], combinedStory: "" };
   }
 
-  if (runtimeDecomposeCache.has(word)) {
+  if (forceRefresh) {
+    runtimeDecomposeCache.delete(word);
+  } else if (runtimeDecomposeCache.has(word)) {
     return runtimeDecomposeCache.get(word)!;
   }
 
@@ -62,52 +67,66 @@ export async function decomposeWordWithRadicals(rawWord: string): Promise<WordDe
     return { word, characters: [], combinedStory: "" };
   }
 
-  // 1. Kiểm tra cache trong MongoDB collection Kanji
+  // 1. Kiểm tra cache trong MongoDB collection Kanji (bỏ qua nếu forceRefresh)
   const existingDocs = await Kanji.find({ character: { $in: chars } }).lean();
   const docMap = new Map<string, any>();
-  for (const d of existingDocs) {
-    if (d.character && Array.isArray(d.components) && d.components.length > 0 && d.story) {
-      docMap.set(d.character, d);
+  if (!forceRefresh) {
+    for (const d of existingDocs) {
+      if (d.character && Array.isArray(d.components) && d.components.length > 0 && d.story) {
+        docMap.set(d.character, d);
+      }
     }
   }
 
   const missingChars = chars.filter((c) => !docMap.has(c));
 
-  // 2. Nếu có chữ chưa có phân tích bộ thủ hoặc câu chuyện -> gọi Gemini (tự xoay khóa)
+  // 2. Nếu có chữ chưa có phân tích bộ thủ hoặc yêu cầu phân tích lại -> gọi Gemini
   if (missingChars.length > 0) {
     const prompt = `
-Bạn là chuyên gia chiết tự chữ Hán Phồn Thể theo chuẩn 214 Bộ Thủ Khang Hy.
-Hãy phân tích từng chữ Hán trong danh sách sau: [${missingChars.join(", ")}] (trong từ vựng "${word}").
+Bạn là chuyên gia văn tự học & chiết tự chữ Hán Phồn Thể (繁體中文 - Đài Loan) theo chuẩn 214 Bộ Thủ Khang Hy.
+Hãy phân tích CHÍNH XÁC từng chữ Hán trong danh sách sau: [${missingChars.join(", ")}] (trong từ "${word}").
 
-YÊU CẦU VỚI MỖI CHỮ HÁN:
-1. Tách chữ đó thành 2-5 bộ thủ / thành phần cấu thành theo 214 bộ thủ Khang Hy (ví dụ: 休 -> 亻 (Nhân - người), 木 (Mộc - cây); 好 -> 女 (Nữ - phụ nữ), 子 (Tử - con cái)).
-2. Với mỗi bộ thủ, ghi rõ: "radical" (ký tự bộ thủ), "hanViet" (tên Hán Việt), "pinyin", "meaning" (nghĩa tiếng Việt ngắn gọn).
-3. Viết "story": Một câu chuyện ngắn gọn, sinh động, hài hước hoặc giàu hình ảnh bằng tiếng Việt **nối liền các bộ thủ đó lại với nhau** để người học nhớ ngay mặt chữ và nghĩa của chữ!
-4. Cung cấp thêm "pinyin", "hanViet", "meaning" của chữ Hán đó.
+QUY TẮC BẮT BUỘC (TUYỆT ĐỐI TUÂN THỦ):
+1. KHÔNG BAO GIỜ BỊA THÊM BỘ THỦ HAY NÉT KHÔNG TỒN TẠI TRÊN MẶT CHỮ:
+   - Mọi thành phần liệt kê phải thực sự hiện diện trên chữ Hán đó và khớp cấu tạo nét Khải thư.
+   - Ví dụ CẤM SAI: chữ "革" (9 nét) chỉ là 1 bộ thủ gốc #177 (Cách - da thuộc), hoặc nhìn theo nét là 廿 + 口 + 十 — TUYỆT ĐỐI KHÔNG được bịa thêm "木" hay nét lạ.
+2. TÁCH KỸ ĐẾN TẬN BỘ THỦ KHANG HY GỐC (KHÔNG DỪNG NỬA CHỪNG):
+   - Nếu chữ có thành phần ghép trung gian vẫn còn tách được tiếp thành bộ thủ trong 214 bộ Khang Hy, PHẢI tách sâu ra từng bộ gốc theo đúng thứ tự trái->phải / trên->dưới / ngoài->trong.
+   - Ví dụ chuẩn:
+     * "鞋" ❌ KHÔNG dừng ở [革, 圭] -> PHẢI tách kỹ thành: ["革" (Cách - da thuộc), "土" (Thổ - đất), "土" (Thổ - đất)] vì "圭" gồm 2 bộ 土 chồng lên nhau!
+     * "休" -> ["亻" (Nhân - người), "木" (Mộc - cây)]
+     * "好" -> ["女" (Nữ - phụ nữ), "子" (Tử - con)]
+     * "林" -> ["木" (Mộc), "木" (Mộc)]
+     * "明" -> ["日" (Nhật - mặt trời), "月" (Nguyệt - mặt trăng)]
+3. CHỮ TỰ THÂN LÀ 1 TRONG 214 BỘ THỦ GỐC (như 革, 人, 木, 水, 火, 土, 日, 月, 口, 心, 手, 金, 馬, 雨...):
+   - Không cần ép tách ra 2-5 mảnh giả tạo nếu tự thân là bộ thủ gốc 1 khối! Có thể trả về chính bộ thủ gốc đó (1 phần tử) rồi mô tả rõ hình dáng từng nét/cụm nét trong phần "story".
+4. Với mỗi bộ thủ, ghi rõ: "radical" (ký tự bộ thủ chuẩn), "hanViet" (Hán Việt), "pinyin", "meaning" (nghĩa tiếng Việt ngắn gọn, rõ).
+5. Viết "story": Giải thích rõ cấu trúc vị trí (trái/phải/trên/dưới), ý nghĩa gốc hoặc câu chuyện logic sâu sắc gắn liền các bộ thủ thực tế để người học nhớ mặt chữ lẫn cách viết.
 
 Trả về JSON thuần theo schema:
 {
   "characters": [
     {
-      "char": "好",
-      "pinyin": "hǎo",
-      "hanViet": "Hảo",
-      "meaning": "Tốt, đẹp",
+      "char": "鞋",
+      "pinyin": "xié",
+      "hanViet": "Hài",
+      "meaning": "Giày, dép",
       "radicals": [
-        { "radical": "女", "hanViet": "Nữ", "pinyin": "nǚ", "meaning": "Phụ nữ" },
-        { "radical": "子", "hanViet": "Tử", "pinyin": "zǐ", "meaning": "Con cái" }
+        { "radical": "革", "hanViet": "Cách", "pinyin": "gé", "meaning": "Da thuộc" },
+        { "radical": "土", "hanViet": "Thổ", "pinyin": "tǔ", "meaning": "Đất" },
+        { "radical": "土", "hanViet": "Thổ", "pinyin": "tǔ", "meaning": "Đất" }
       ],
-      "story": "Người phụ nữ (女) ôm đứa con nhỏ (子) trong vòng tay là điều tốt đẹp (好) nhất trên đời."
+      "story": "Bên trái là bộ Cách (革 - da thuộc), bên phải là hai bộ Thổ (土) chồng lên nhau thành Khuê (圭): đôi giày (鞋) làm bằng da (革) bền chắc để bước đi trên mặt đất (土)."
     }
   ],
-  "combinedStory": "Câu chuyện ngắn kết nối cả từ '${word}' nếu là từ ghép nhiều chữ."
+  "combinedStory": "Câu chuyện liên kết tự nhiên cả từ '${word}' (nếu có nhiều chữ)."
 }
 Chỉ trả về JSON hợp lệ.
 `;
 
     try {
       const text = await withGeminiRotation(async (client) => {
-        const models = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-lite-latest"];
+        const models = ["gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-lite-latest"];
         let lastErr: any;
         for (const m of models) {
           try {
@@ -115,7 +134,7 @@ Chỉ trả về JSON hợp lệ.
               model: m,
               generationConfig: {
                 responseMimeType: "application/json",
-                temperature: 0.3,
+                temperature: 0.1,
               },
             });
             const res = await model.generateContent(prompt);
@@ -149,17 +168,20 @@ Chỉ trả về JSON hợp lệ.
           story: item.story || "",
         });
 
-        // Lưu cache vào MongoDB nếu chữ đã tồn tại hoặc tạo nhẹ nếu chưa có
+        // Lưu hoặc ghi đè cache Kanji nếu forceRefresh
         try {
           const existing = await Kanji.findOne({ character: item.char });
           if (existing) {
-            if (!existing.components || existing.components.length === 0) {
+            let dirty = false;
+            if (forceRefresh || !existing.components || existing.components.length === 0) {
               existing.components = radList.map((r) => r.radical);
+              dirty = true;
             }
-            if (!existing.story && item.story) {
+            if ((forceRefresh || !existing.story) && item.story) {
               existing.story = item.story;
+              dirty = true;
             }
-            await existing.save();
+            if (dirty) await existing.save();
           }
         } catch (dbErr) {}
       }

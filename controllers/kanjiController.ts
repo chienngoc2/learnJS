@@ -641,7 +641,9 @@ export const decomposeWordController = asyncHandler(async (
   if (!word) {
     throw new ValidationError("Thiếu từ vựng cần phân tích bộ thủ!");
   }
-  const result = await decomposeWordWithRadicals(word);
+  const forceRefresh =
+    req.query.refresh === "true" || req.query.refresh === "1" || req.body?.refresh === true;
+  const result = await decomposeWordWithRadicals(word, forceRefresh);
   res.json({
     success: true,
     data: result,
@@ -656,7 +658,9 @@ export const getWordAnalysisController = asyncHandler(async (
   if (!word) {
     throw new ValidationError("Thiếu từ vựng cần phân tích!");
   }
-  const result = await getFullWordAnalysis(word);
+  const forceRefresh =
+    req.query.refresh === "true" || req.query.refresh === "1" || req.body?.refresh === true;
+  const result = await getFullWordAnalysis(word, forceRefresh);
   res.json({
     success: true,
     data: result,

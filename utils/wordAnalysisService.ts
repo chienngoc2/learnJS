@@ -19,7 +19,10 @@ export interface FullWordAnalysisResult {
  * Lấy phân tích toàn diện của một từ vựng (214 bộ thủ màu sắc + câu chuyện AI + đồng nghĩa + mẫu câu).
  * Luôn ưu tiên đọc từ bảng WordAnalysis trên MongoDB để không tốn token AI cho các lần mở sau.
  */
-export async function getFullWordAnalysis(rawWord: string): Promise<FullWordAnalysisResult> {
+export async function getFullWordAnalysis(
+  rawWord: string,
+  forceRefresh = false
+): Promise<FullWordAnalysisResult> {
   const word = (rawWord || "").trim();
   if (!word) {
     return {
@@ -34,35 +37,38 @@ export async function getFullWordAnalysis(rawWord: string): Promise<FullWordAnal
     };
   }
 
-  // 1. Kiểm tra cache vĩnh viễn trên MongoDB (bảng WordAnalysis)
-  try {
-    const cached = await WordAnalysis.findOne({ word }).lean();
-    if (
-      cached &&
-      Array.isArray(cached.characters) &&
-      cached.characters.length > 0 &&
-      (Array.isArray(cached.usages) && cached.usages.length > 0 || Array.isArray(cached.synonyms) && cached.synonyms.length > 0)
-    ) {
-      return {
-        word: cached.word,
-        pinyin: cached.pinyin || "",
-        hanviet: cached.hanviet || "",
-        meaning: cached.meaning || "",
-        synonyms: cached.synonyms || [],
-        usages: cached.usages || [],
-        characters: cached.characters as CharacterDecomposition[],
-        combinedStory: cached.combinedStory || "",
-        fromCache: true,
-      };
+  // 1. Kiểm tra cache vĩnh viễn trên MongoDB (bỏ qua nếu người dùng bấm "Phân tích lại")
+  if (!forceRefresh) {
+    try {
+      const cached = await WordAnalysis.findOne({ word }).lean();
+      if (
+        cached &&
+        Array.isArray(cached.characters) &&
+        cached.characters.length > 0 &&
+        ((Array.isArray(cached.usages) && cached.usages.length > 0) ||
+          (Array.isArray(cached.synonyms) && cached.synonyms.length > 0))
+      ) {
+        return {
+          word: cached.word,
+          pinyin: cached.pinyin || "",
+          hanviet: cached.hanviet || "",
+          meaning: cached.meaning || "",
+          synonyms: cached.synonyms || [],
+          usages: cached.usages || [],
+          characters: cached.characters as CharacterDecomposition[],
+          combinedStory: cached.combinedStory || "",
+          fromCache: true,
+        };
+      }
+    } catch (err: any) {
+      console.warn("⚠️ [WordAnalysis] Lỗi đọc MongoDB cache:", err.message);
     }
-  } catch (err: any) {
-    console.warn("⚠️ [WordAnalysis] Lỗi đọc MongoDB cache:", err.message);
   }
 
-  // 2. Chưa có cache đầy đủ -> chạy song song phân tích bộ thủ & insights từ AI
+  // 2. Chưa có cache đầy đủ hoặc yêu cầu phân tích lại -> chạy song song AI mới (skip cache)
   const [decomp, insights] = await Promise.all([
-    decomposeWordWithRadicals(word),
-    getWordInsights(word),
+    decomposeWordWithRadicals(word, forceRefresh),
+    getWordInsights(word, forceRefresh),
   ]);
 
   const merged: FullWordAnalysisResult = {

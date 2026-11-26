@@ -329,19 +329,21 @@ const runtimeInsightsCache = new Map<string, WordInsightResult>();
 /**
  * Lấy thông tin mở rộng: Từ đồng nghĩa, gần nghĩa & Cách dùng khác
  */
-export async function getWordInsights(wordText: string): Promise<WordInsightResult> {
+export async function getWordInsights(wordText: string, forceRefresh = false): Promise<WordInsightResult> {
   const w = (wordText || "").trim();
   if (!w) {
     throw new Error("Từ tra cứu không được để trống!");
   }
 
-  // 1. Kiểm tra cache runtime
-  if (runtimeInsightsCache.has(w)) {
+  // 1. Kiểm tra cache runtime (bỏ qua nếu forceRefresh)
+  if (forceRefresh) {
+    runtimeInsightsCache.delete(w);
+  } else if (runtimeInsightsCache.has(w)) {
     return runtimeInsightsCache.get(w)!;
   }
 
   // 2. Kiểm tra bộ từ điển biên soạn sẵn
-  if (BUILTIN_INSIGHTS[w]) {
+  if (!forceRefresh && BUILTIN_INSIGHTS[w]) {
     const res: WordInsightResult = {
       word: w,
       ...BUILTIN_INSIGHTS[w],
@@ -354,13 +356,14 @@ export async function getWordInsights(wordText: string): Promise<WordInsightResu
   try {
     const prompt = `
 Bạn là chuyên gia ngôn ngữ tiếng Trung Phồn Thể (Traditional Chinese - 繁體中文, Đài Loan/TOCFL) và dịch giả cao cấp.
-Nhiệm vụ: Cung cấp từ đồng nghĩa (synonyms), từ gần nghĩa và các cách dùng khác nhau / cấu trúc ngữ pháp phổ biến cho từ: "${w}".
+Nhiệm vụ: Phân tích SÂU VÀ KỸ từ vựng: "${w}" — cung cấp từ đồng nghĩa/gần nghĩa phân biệt sắc thái rõ ràng và các cách dùng/ngữ pháp thực tế hay gặp.
 
 YÊU CẦU:
-1. "pinyin": Phiên âm có dấu thanh điệu chuẩn.
-2. "meaning": Ý nghĩa tiếng Việt chính xác và tự nhiên.
-3. "synonyms": Danh sách 2-4 từ đồng nghĩa hoặc gần nghĩa tiếng Trung Phồn Thể, kèm Pinyin, nghĩa tiếng Việt và "difference" giải thích ngắn gọn sắc thái khác nhau.
-4. "usages": Danh sách 2-3 cách dùng khác nhau hoặc cấu trúc ngữ pháp kèm ví dụ song ngữ (exampleCn bằng Phồn Thể, examplePinyin, exampleVn).
+1. "pinyin": Phiên âm có dấu thanh điệu chuẩn (Đài Loan/Phổ thông).
+2. "hanviet": Âm Hán Việt chuẩn xác.
+3. "meaning": Nghĩa tiếng Việt đầy đủ, rõ các lớp nghĩa thường gặp.
+4. "synonyms": Danh sách 2-4 từ đồng nghĩa hoặc gần nghĩa tiếng Trung Phồn Thể, kèm Pinyin, nghĩa tiếng Việt và "difference" giải thích cụ thể sự khác biệt về ngữ cảnh, mức độ trang trọng hoặc cách kết hợp từ.
+5. "usages": Danh sách 2-3 cấu trúc ngữ pháp / cụm kết hợp phổ biến thực tế (pattern cụ thể, nghĩa rõ, câu ví dụ Phồn Thể tự nhiên + Pinyin + dịch Việt).
 
 Trả về định dạng JSON thuần hợp lệ theo schema:
 {
@@ -390,17 +393,31 @@ Chỉ trả về JSON hợp lệ, không giải thích gì thêm.
 `;
 
     const text = await withGeminiRotation(async (client) => {
-      const model = client.getGenerativeModel({
-        model: "gemini-3.5-flash-lite",
-        generationConfig: {
-          responseMimeType: "application/json",
-          temperature: 0.2,
-        },
-      });
-      const aiRes = await model.generateContent(prompt);
-      return aiRes.response.text();
+      const models = ["gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-lite-latest"];
+      let lastErr: any;
+      for (const m of models) {
+        try {
+          const model = client.getGenerativeModel({
+            model: m,
+            generationConfig: {
+              responseMimeType: "application/json",
+              temperature: 0.15,
+            },
+          });
+          const aiRes = await model.generateContent(prompt);
+          const out = aiRes.response.text();
+          if (out) return out;
+        } catch (e: any) {
+          lastErr = e;
+          if (String(e?.message || "").includes("429") || String(e?.message || "").toLowerCase().includes("quota")) {
+            throw e;
+          }
+        }
+      }
+      throw lastErr || new Error("Không thể lấy insights");
     });
-    const parsed = JSON.parse(text);
+    const cleaned = text.replace(/```json/gi, "").replace(/```/g, "").trim();
+    const parsed = JSON.parse(cleaned);
 
     const result: WordInsightResult = {
       word: w,
