@@ -10,6 +10,7 @@ import { asyncHandler } from "../middleware/errorHandler.js";
 import { NotFoundError, ValidationError, UnauthorizedError } from "../utils/errors.js";
 import { AuthenticatedRequest } from "../middleware/authMiddleware.js";
 import { syncVocabListToPinecone, deleteVocabListFromPinecone } from "../utils/ragSync.js";
+import { upsertSharedVocabBatch } from "../utils/sharedVocabService.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -57,7 +58,7 @@ export const getAllLists = asyncHandler(async (req: Request, res: Response): Pro
     : { $or: [{ userId: { $exists: false } }, { userId: null }] };
 
   const lists = await VocabList.find(query)
-    .select("title createdAt words userId")
+    .select("title createdAt words grammarPoints userId")
     .sort({ createdAt: -1 });
   res.json({ success: true, data: lists });
 });
@@ -243,6 +244,10 @@ export const createList = asyncHandler(async (
 
     await existingList.save();
     syncVocabListToPinecone(existingList._id.toString());
+    upsertSharedVocabBatch(
+      normalizedWords.map((w: any) => ({ word: w.term, pinyin: w.reading, meaning: w.meaning, level: existingList.title })),
+      existingList.title
+    );
 
     console.log(
       `📦 [VocabSave] Trùng tên bài "${trimmedTitle}" -> Đã gộp vào bài cũ (thêm ${addedCount}, cập nhật ${updatedCount})`
@@ -260,8 +265,12 @@ export const createList = asyncHandler(async (
   });
   await newList.save();
   
-  // Tự động đồng bộ Pinecone (chạy ngầm)
+  // Tự động đồng bộ Pinecone & Kho từ vựng tra cứu chung
   syncVocabListToPinecone(newList._id.toString());
+  upsertSharedVocabBatch(
+    normalizedWords.map((w: any) => ({ word: w.term, pinyin: w.reading, meaning: w.meaning, level: trimmedTitle })),
+    trimmedTitle
+  );
 
   res.json({ success: true, merged: false, data: newList });
 });
@@ -323,8 +332,12 @@ export const updateList = asyncHandler(async (
   targetList.words = normalized;
   await targetList.save();
 
-  // Tự động cập nhật Pinecone
+  // Tự động cập nhật Pinecone & Kho từ vựng tra cứu chung
   syncVocabListToPinecone(targetList._id.toString());
+  upsertSharedVocabBatch(
+    normalized.map((w: any) => ({ word: w.term, pinyin: w.reading, meaning: w.meaning, level: title })),
+    title
+  );
 
   res.json({ success: true, data: targetList });
 });

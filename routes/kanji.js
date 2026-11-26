@@ -13,6 +13,7 @@ import {
   getRadicals214Controller,
   decomposeWordController,
   getWordAnalysisController,
+  getSearchableWordsController,
 } from "../controllers/kanjiController.js";
 
 const router = express.Router();
@@ -30,6 +31,9 @@ router.post("/decompose", decomposeWordController);
 
 // GET  /api/kanji/insights?q=好                  → Tra cứu từ đồng nghĩa, gần nghĩa & ngữ cảnh
 router.get("/insights", getWordInsightsController);
+
+// GET  /api/kanji/searchable-words              → Danh sách từ vựng tra cứu hợp nhất (cả kho chung)
+router.get("/searchable-words", getSearchableWordsController);
 
 // GET  /api/kanji/search?q=一                   → Tra cứu theo từ khóa
 router.get("/search", searchKanji);

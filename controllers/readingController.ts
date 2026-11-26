@@ -6,6 +6,7 @@ import { asyncHandler } from "../middleware/errorHandler.js";
 import { ValidationError, NotFoundError } from "../utils/errors.js";
 import { AuthenticatedRequest } from "../middleware/authMiddleware.js";
 import { withGeminiRotation } from "../utils/geminiClient.js";
+import { upsertSharedVocabBatch } from "../utils/sharedVocabService.js";
 
 /**
  * Xây dựng bản đồ tần suất xuất hiện của từng từ vựng across tất cả VocabList & ReadingPassage khác
@@ -140,6 +141,17 @@ export const analyzeReadingHandler = asyncHandler(async (req: Request, res: Resp
     existing.vocabulary = refreshedVocab;
     await existing.save();
 
+    await upsertSharedVocabBatch(
+      refreshedVocab.map((v) => ({
+        word: v.term,
+        pinyin: v.pinyin,
+        meaning: v.meaning,
+        pos: v.pos,
+        level: existing.title ? `Bài đọc: ${existing.title}` : "Bài đọc",
+      })),
+      existing.title ? `Bài đọc: ${existing.title}` : "Bài đọc"
+    );
+
     res.status(200).json({
       success: true,
       fromCache: true,
@@ -222,7 +234,7 @@ BẮT BUỘC trả về JSON thuần hợp lệ theo đúng schema trên, không
       })).filter((g: any) => g.pattern)
     : [];
 
-  // 4. Lưu vào bảng ReadingPassage trên MongoDB
+  // 4. Lưu vào bảng ReadingPassage trên MongoDB & tự động đưa tất cả từ mới vào kho SharedVocab để tra cứu
   const saved = await ReadingPassage.create({
     userId,
     title: finalTitle,
@@ -232,6 +244,17 @@ BẮT BUỘC trả về JSON thuần hợp lệ theo đúng schema trên, không
     vocabulary: enrichedVocab,
     grammarPoints,
   });
+
+  await upsertSharedVocabBatch(
+    enrichedVocab.map((v) => ({
+      word: v.term,
+      pinyin: v.pinyin,
+      meaning: v.meaning,
+      pos: v.pos,
+      level: `Bài đọc: ${finalTitle}`,
+    })),
+    `Bài đọc: ${finalTitle}`
+  );
 
   res.status(201).json({
     success: true,

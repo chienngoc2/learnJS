@@ -1,34 +1,17 @@
 import type { Request, Response } from "express";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
 import Kanji from "../models/Kanji.js";
-import VocabList from "../models/VocabList.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { NotFoundError, ValidationError, ConflictError } from "../utils/errors.js";
 import { cleanPinyinForMatching } from "../utils/pinyinUtils.js";
 import { getWordInsights } from "../utils/wordInsights.js";
 import { decomposeWordWithRadicals, getAll214Radicals } from "../utils/radicalDecomposer.js";
 import { getFullWordAnalysis } from "../utils/wordAnalysisService.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-let cachedMasterWords: any[] | null = null;
-function getMasterWords(): any[] {
-  if (cachedMasterWords) return cachedMasterWords;
-  try {
-    const p = path.join(__dirname, "../data/vocab_master.json");
-    if (fs.existsSync(p)) {
-      const data = JSON.parse(fs.readFileSync(p, "utf-8"));
-      cachedMasterWords = data.words || data || [];
-      return cachedMasterWords;
-    }
-  } catch (e) {
-    console.warn("Could not load master vocab in kanjiController:", e);
-  }
-  return [];
-}
+import {
+  collectCombinedVocabPool,
+  escapeRegex,
+  scoreSearchMatch,
+  upsertSharedVocabBatch,
+} from "../utils/sharedVocabService.js";
 
 // =========================================================================
 // 📦 INTERFACE CHUẨN CHO KANJI ITEM
@@ -64,7 +47,8 @@ const safeTrim = (val: any): string => {
 };
 
 // =========================================================================
-// 🔍 1. TÌM KIẾM CHỮ HÁN PHỒN THỂ / TỪ VỰNG HỢP NHẤT (KHO MASTER + TẤT CẢ BẢNG BÀI HỌC)
+// 🔍 1. TÌM KIẾM CHỮ HÁN PHỒN THỂ / TỪ VỰNG HỢP NHẤT
+//    (SharedVocab + VocabList + ReadingPassage + WordAnalysis + Kanji + Master)
 // @route GET /api/kanji/search?q=一
 // =========================================================================
 export const searchKanji = asyncHandler(async (
@@ -77,138 +61,63 @@ export const searchKanji = asyncHandler(async (
     throw new ValidationError("Thiếu từ khóa tìm kiếm!");
   }
 
-  const masterList = getMasterWords();
+  // 1. Tìm trong bảng Kanji MongoDB (escape regex tránh lỗi ký tự đặc biệt)
+  const queryRegex = new RegExp(escapeRegex(q), "i");
+  const [kanjiDoc, combinedAllWords] = await Promise.all([
+    Kanji.findOne({
+      $or: [
+        { character: q },
+        { pinyin: queryRegex },
+        { zhuyin: queryRegex },
+        { vietnamese_reading: queryRegex },
+        { meaning: queryRegex },
+      ],
+    }),
+    collectCombinedVocabPool(),
+  ]);
 
-  // 1. Tìm trong bảng Kanji MongoDB
-  const queryRegex = new RegExp(q, "i");
-  const kanjiDoc = await Kanji.findOne({
-    $or: [
-      { character: q },
-      { pinyin: queryRegex },
-      { zhuyin: queryRegex },
-      { vietnamese_reading: queryRegex },
-      { meaning: queryRegex },
-    ],
-  });
+  // 2. Chấm điểm & sắp xếp toàn bộ kết quả khớp theo độ liên quan
+  const rankedMatches = combinedAllWords
+    .map((item) => ({ item, score: scoreSearchMatch(item, q) }))
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score || a.item.word.length - b.item.word.length);
 
-  // 2. Quét TẤT CẢ các bộ bài học trong bảng VocabList MongoDB
-  const allVocabLists = await VocabList.find({}).select("title words");
-  const dbLessonWords: Array<{ word: string; pinyin?: string; meaning: string; level?: string; lessonTitle?: string }> = [];
-
-  let dbVocabWord: any = null;
-  let dbVocabLessonTitle = "";
-
-  allVocabLists.forEach((list: any) => {
-    (list.words || []).forEach((w: any) => {
-      let cleanMeaning = w.meaning || w.def || "";
-      let cleanPinyin = w.pinyin || w.reading || "";
-      if (typeof cleanMeaning === "string" && cleanMeaning.startsWith("{")) {
-        try {
-          const parsed = JSON.parse(cleanMeaning);
-          cleanMeaning = parsed.meaning || parsed.def || cleanMeaning;
-          cleanPinyin = cleanPinyin || parsed.pinyin || parsed.reading || "";
-        } catch (e) {}
-      }
-      const item = {
-        word: w.term,
-        pinyin: cleanPinyin,
-        meaning: String(cleanMeaning || ""),
-        level: list.title || w.level || "Bài học",
-        lessonTitle: list.title,
-      };
-      if (w.term) {
-        dbLessonWords.push(item);
-      }
-
-      if (!dbVocabWord && (w.term === q || w.term?.toLowerCase() === q.toLowerCase())) {
-        dbVocabWord = item;
-        dbVocabLessonTitle = list.title;
-      }
-    });
-  });
-
-  // 3. Lấy tất cả Kanji từ bảng Kanji
-  const allKanjiDocs = await Kanji.find({}).select("character meaning pinyin vietnamese_reading lessonGroup example_words");
-  allKanjiDocs.forEach((k: any) => {
-    if (k.character) {
-      dbLessonWords.push({
-        word: k.character,
-        pinyin: k.pinyin || "",
-        meaning: k.meaning || k.vietnamese_reading || "",
-        level: k.lessonGroup || k.level || "Kanji",
-        lessonTitle: k.lessonGroup || "",
-      });
-    }
-    (k.example_words || []).forEach((ew: any) => {
-      if (ew.word) {
-        dbLessonWords.push({
-          word: ew.word,
-          pinyin: ew.reading || "",
-          meaning: ew.meaning || "",
-          level: k.lessonGroup || k.level || "Kanji",
-          lessonTitle: k.lessonGroup || "",
-        });
-      }
-    });
-  });
-
-  // 4. Hợp nhất Master List + Toàn bộ từ vựng từ các bài học
-  const combinedAllWords: Array<{ word: string; pinyin?: string; meaning: string; level?: string }> = [];
-  const seenAll = new Set<string>();
-
-  // Ưu tiên từ trong bài học database trước
-  dbLessonWords.forEach((item) => {
-    if (item.word && !seenAll.has(item.word)) {
-      seenAll.add(item.word);
-      combinedAllWords.push(item);
-    }
-  });
-
-  masterList.forEach((item) => {
-    if (item.word && !seenAll.has(item.word)) {
-      seenAll.add(item.word);
-      combinedAllWords.push(item);
-    }
-  });
+  const targetWord = rankedMatches[0]?.item || null;
 
   const qCleanPinyin = cleanPinyinForMatching(q);
-
-  // 5. Tìm chính xác hoặc tìm theo Pinyin hoặc tìm mờ trong toàn bộ kho từ vựng
-  const exactMatch = combinedAllWords.find(
-    (w) => w.word === q || w.word.toLowerCase() === q.toLowerCase()
-  );
-
-  const pinyinExactMatch = !exactMatch && qCleanPinyin
-    ? combinedAllWords.find((w) => cleanPinyinForMatching(w.pinyin || "") === qCleanPinyin)
-    : null;
-
-  const fuzzyMatch = !exactMatch && !pinyinExactMatch
-    ? combinedAllWords.find(
-        (w) =>
-          w.word.includes(q) ||
-          (w.pinyin && w.pinyin.toLowerCase().includes(q.toLowerCase())) ||
-          (qCleanPinyin && cleanPinyinForMatching(w.pinyin || "").includes(qCleanPinyin)) ||
-          (w.meaning && w.meaning.toLowerCase().includes(q.toLowerCase()))
-      )
-    : null;
-
-  const targetWord = exactMatch || pinyinExactMatch || fuzzyMatch;
-
-  // Lấy danh sách tất cả các từ đồng âm hoặc khớp Pinyin
   const pinyinMatches = qCleanPinyin && qCleanPinyin.length >= 1
     ? combinedAllWords.filter((w) => {
-        const wp = cleanPinyinForMatching(w.pinyin || "");
+        const wp = w.cleanPinyin || cleanPinyinForMatching(w.pinyin || "");
         return wp === qCleanPinyin || wp.startsWith(qCleanPinyin) || (qCleanPinyin.length >= 2 && wp.includes(qCleanPinyin));
       }).slice(0, 40)
     : [];
 
-  // Lấy các chữ Hán cấu thành từ khóa
-  const mainCharacterStr = exactMatch?.word || kanjiDoc?.character || dbVocabWord?.word || targetWord?.word || q;
+  const mainCharacterStr = targetWord?.word || kanjiDoc?.character || q;
   const individualChars = mainCharacterStr
     .split("")
     .filter((ch: string) => /[\u4e00-\u9fff\u3400-\u4dbf]/.test(ch));
 
-  // 6. Quét tìm tất cả các từ vựng / từ ghép trong toàn bộ kho (gồm cả bài học) chứa bất kỳ chữ Hán nào
+  // Nếu không khớp bất kỳ từ nào và cũng không chứa chữ Hán -> trả về null để UI báo không tìm thấy rõ ràng
+  if (!targetWord && !kanjiDoc && individualChars.length === 0) {
+    res.json({
+      success: true,
+      data: null,
+      message: "Không tìm thấy từ vựng hoặc chữ Hán này.",
+    });
+    return;
+  }
+
+  // Nếu là chữ Hán chưa có trong kho từ điển -> tự tra cứu AI 1 lần và cache vào WordAnalysis + SharedVocab
+  let aiFallback: any = null;
+  if (!targetWord && !kanjiDoc && individualChars.length > 0 && q.length <= 8) {
+    try {
+      aiFallback = await getFullWordAnalysis(q);
+    } catch (e) {
+      // ignore AI error, fall back to character composition
+    }
+  }
+
+  // Quét tất cả từ ghép / từ liên quan chứa bất kỳ chữ Hán nào
   const relatedWords: ExampleWord[] = [];
   const seenWords = new Set<string>();
 
@@ -224,68 +133,102 @@ export const searchKanji = asyncHandler(async (
     }
   });
 
-  // Nếu tìm thấy hoặc là chữ Hán hợp lệ
-  if (kanjiDoc || dbVocabWord || targetWord || individualChars.length > 0) {
-    const character = mainCharacterStr;
-    let pinyin = targetWord?.pinyin || kanjiDoc?.pinyin || dbVocabWord?.pinyin || "";
-    if (!pinyin && individualChars.length > 0) {
-      const charPinyins = individualChars.map((ch: string) => {
-        const found = combinedAllWords.find((w) => w.word === ch && w.pinyin);
-        return found?.pinyin || "";
-      });
-      if (charPinyins.some(Boolean)) {
-        pinyin = charPinyins.filter(Boolean).join(" ");
-      }
-    }
-    const zhuyin = (targetWord as any)?.zhuyin || kanjiDoc?.zhuyin || "";
-    const vietnamese_reading =
-      kanjiDoc?.vietnamese_reading ||
-      (targetWord?.meaning && targetWord.meaning.length <= 25 ? targetWord.meaning : "") ||
-      "Phồn Thể";
-    const meaning = targetWord?.meaning || kanjiDoc?.meaning || dbVocabWord?.meaning || "Từ vựng tiếng Trung Phồn Thể";
-    const level = targetWord?.level || kanjiDoc?.level || dbVocabLessonTitle || "Bài học";
-
-    // Kết hợp từ ghép
-    const combinedExamples = [
-      ...(kanjiDoc?.example_words || []),
-      ...relatedWords,
-    ].filter((item, idx, arr) => arr.findIndex((x) => x.word === item.word) === idx);
-
-    // Câu ví dụ song ngữ
-    const sampleExamples = (targetWord as any)?.examples && (targetWord as any).examples.length > 0
-      ? (targetWord as any).examples
-      : [
-          {
-            cn: `這是${character}。`,
-            pinyin: `Zhè shì ${pinyin || character}.`,
-            vn: `Đây là ${meaning.split(',')[0]}.`
-          }
-        ];
-
-    res.json({
-      success: true,
-      data: {
-        character: character,
-        characters: individualChars.length > 0 ? individualChars : [character[0] || character],
-        pinyin: pinyin,
-        zhuyin: zhuyin,
-        vietnamese_reading: vietnamese_reading,
-        meaning: meaning,
-        level: level,
-        example_words: combinedExamples,
-        examples: sampleExamples,
-        story: kanjiDoc?.story || "",
-        components: kanjiDoc?.components || [],
-        pinyin_matches: pinyinMatches,
-      },
+  const character = mainCharacterStr;
+  let pinyin = targetWord?.pinyin || kanjiDoc?.pinyin || aiFallback?.pinyin || "";
+  if (!pinyin && individualChars.length > 0) {
+    const charPinyins = individualChars.map((ch: string) => {
+      const found = combinedAllWords.find((w) => w.word === ch && w.pinyin);
+      return found?.pinyin || "";
     });
-    return;
+    if (charPinyins.some(Boolean)) {
+      pinyin = charPinyins.filter(Boolean).join(" ");
+    }
   }
+
+  const zhuyin = kanjiDoc?.zhuyin || "";
+  const vietnamese_reading =
+    kanjiDoc?.vietnamese_reading ||
+    targetWord?.hanviet ||
+    aiFallback?.hanviet ||
+    (targetWord?.meaning && targetWord.meaning.length <= 25 ? targetWord.meaning : "") ||
+    "Phồn Thể";
+  const meaning =
+    targetWord?.meaning ||
+    kanjiDoc?.meaning ||
+    aiFallback?.meaning ||
+    "Từ vựng tiếng Trung Phồn Thể";
+  const level = targetWord?.level || kanjiDoc?.level || "Bài học";
+
+  const combinedExamples = [
+    ...(kanjiDoc?.example_words || []),
+    ...relatedWords,
+  ].filter((item, idx, arr) => arr.findIndex((x) => x.word === item.word) === idx);
+
+  const aiExamples = Array.isArray(aiFallback?.usages)
+    ? aiFallback.usages
+        .filter((u: any) => u?.exampleCn)
+        .map((u: any) => ({
+          cn: u.exampleCn,
+          pinyin: u.examplePinyin || "",
+          vn: u.exampleVn || u.meaning || "",
+        }))
+    : [];
+
+  const sampleExamples = aiExamples.length > 0
+    ? aiExamples
+    : [
+        {
+          cn: `這是${character}。`,
+          pinyin: `Zhè shì ${pinyin || character}.`,
+          vn: `Đây là ${meaning.split(",")[0]}.`,
+        },
+      ];
 
   res.json({
     success: true,
-    data: null,
-    message: "Không tìm thấy từ vựng hoặc chữ Hán này.",
+    data: {
+      character,
+      characters: individualChars.length > 0 ? individualChars : [character[0] || character],
+      pinyin,
+      zhuyin,
+      vietnamese_reading,
+      meaning,
+      level,
+      example_words: combinedExamples,
+      examples: sampleExamples,
+      story: kanjiDoc?.story || aiFallback?.combinedStory || "",
+      components: kanjiDoc?.components || [],
+      pinyin_matches: pinyinMatches,
+      matched_candidates: rankedMatches.slice(0, 12).map((m) => ({
+        word: m.item.word,
+        pinyin: m.item.pinyin,
+        meaning: m.item.meaning,
+        level: m.item.level,
+      })),
+    },
+  });
+});
+
+// =========================================================================
+// 📚 1b. DANH SÁCH TỪ VỰNG TRA CỨU CHUNG (SharedVocab + Bài học + Bài đọc + AI + Kanji + Master)
+// @route GET /api/kanji/searchable-words
+// =========================================================================
+export const getSearchableWordsController = asyncHandler(async (
+  _req: Request,
+  res: Response,
+): Promise<void> => {
+  const pool = await collectCombinedVocabPool();
+  res.json({
+    success: true,
+    total: pool.length,
+    data: pool.map((w) => ({
+      word: w.word,
+      pinyin: w.pinyin,
+      hanviet: w.hanviet,
+      meaning: w.meaning,
+      level: w.level,
+      source: w.source,
+    })),
   });
 });
 
@@ -414,6 +357,24 @@ export const addKanji = asyncHandler(async (
   });
 
   await newKanji.save();
+  upsertSharedVocabBatch(
+    [
+      {
+        word: newKanji.character,
+        pinyin: newKanji.pinyin,
+        hanviet: newKanji.vietnamese_reading,
+        meaning: newKanji.meaning,
+        level: newKanji.lessonGroup || newKanji.level,
+      },
+      ...(newKanji.example_words || []).map((ew: any) => ({
+        word: ew.word,
+        pinyin: ew.reading,
+        meaning: ew.meaning,
+        level: newKanji.lessonGroup || newKanji.level,
+      })),
+    ],
+    newKanji.lessonGroup || "Kanji"
+  );
 
   res.status(201).json({
     success: true,
@@ -499,6 +460,25 @@ export const bulkAddKanji = asyncHandler(async (
       results.errors.push(`Lỗi "${item.character}": ${itemErr.message}`);
     }
   }
+
+  const addedWordsForShared = items
+    .filter((i) => i?.character && i?.meaning)
+    .flatMap((i) => [
+      {
+        word: i.character.trim(),
+        pinyin: i.pinyin?.trim() || "",
+        hanviet: i.vietnamese_reading?.trim() || "",
+        meaning: i.meaning.trim(),
+        level: i.lessonGroup?.trim() || defaultLessonGroup?.trim() || i.level || defaultLevel || "Kanji",
+      },
+      ...((i.example_words || []).map((ew) => ({
+        word: ew.word,
+        pinyin: ew.reading,
+        meaning: ew.meaning,
+        level: i.lessonGroup?.trim() || defaultLessonGroup?.trim() || "Kanji",
+      }))),
+    ]);
+  upsertSharedVocabBatch(addedWordsForShared, defaultLessonGroup || "Kanji");
 
   res.json({
     success: true,

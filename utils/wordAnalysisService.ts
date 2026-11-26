@@ -1,6 +1,7 @@
 import WordAnalysis from "../models/WordAnalysis.js";
 import { decomposeWordWithRadicals, CharacterDecomposition } from "./radicalDecomposer.js";
 import { getWordInsights } from "./wordInsights.js";
+import { upsertSharedVocabBatch } from "./sharedVocabService.js";
 
 export interface FullWordAnalysisResult {
   word: string;
@@ -94,6 +95,18 @@ export async function getFullWordAnalysis(rawWord: string): Promise<FullWordAnal
           },
         },
         { upsert: true, new: true }
+      );
+      await upsertSharedVocabBatch(
+        [
+          {
+            word: merged.word,
+            pinyin: merged.pinyin,
+            hanviet: merged.hanviet,
+            meaning: merged.meaning,
+            level: "AI Phân tích",
+          },
+        ],
+        "AI Phân tích"
       );
     } catch (saveErr: any) {
       console.warn("⚠️ [WordAnalysis] Lỗi lưu MongoDB cache:", saveErr.message);
