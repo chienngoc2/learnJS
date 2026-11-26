@@ -12,12 +12,17 @@ import {
   getWordInsightsController,
   getRadicals214Controller,
   decomposeWordController,
+  getWordAnalysisController,
 } from "../controllers/kanjiController.js";
 
 const router = express.Router();
 
 // GET  /api/kanji/radicals-214                  → Lấy đầy đủ 214 bộ thủ Khang Hy
 router.get("/radicals-214", getRadicals214Controller);
+
+// GET/POST /api/kanji/word-analysis?word=好     → Phân tích đầy đủ (214 bộ thủ + câu chuyện + mẫu câu, có MongoDB cache)
+router.get("/word-analysis", getWordAnalysisController);
+router.post("/word-analysis", getWordAnalysisController);
 
 // GET/POST /api/kanji/decompose?word=休         → Tách chữ thành bộ thủ màu sắc + câu chuyện AI
 router.get("/decompose", decomposeWordController);

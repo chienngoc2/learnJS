@@ -9,6 +9,7 @@ import { NotFoundError, ValidationError, ConflictError } from "../utils/errors.j
 import { cleanPinyinForMatching } from "../utils/pinyinUtils.js";
 import { getWordInsights } from "../utils/wordInsights.js";
 import { decomposeWordWithRadicals, getAll214Radicals } from "../utils/radicalDecomposer.js";
+import { getFullWordAnalysis } from "../utils/wordAnalysisService.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -661,6 +662,21 @@ export const decomposeWordController = asyncHandler(async (
     throw new ValidationError("Thiếu từ vựng cần phân tích bộ thủ!");
   }
   const result = await decomposeWordWithRadicals(word);
+  res.json({
+    success: true,
+    data: result,
+  });
+});
+
+export const getWordAnalysisController = asyncHandler(async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const word = String(req.query.word || req.query.q || req.body?.word || "").trim();
+  if (!word) {
+    throw new ValidationError("Thiếu từ vựng cần phân tích!");
+  }
+  const result = await getFullWordAnalysis(word);
   res.json({
     success: true,
     data: result,

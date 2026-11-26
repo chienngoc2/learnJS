@@ -13,6 +13,7 @@ import authRoutes from "./routes/authRoutes.js";
 // import noteRoutes from "./routes/notes.js"; // Nếu bản V2 vẫn dùng thì mở ra
 import ragRoutes from "./routes/ragRoutes.js";
 import audioRoutes from "./routes/audioRoutes.js";
+import readingRoutes from "./routes/readingRoutes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
 import dotenv from "dotenv";
@@ -66,6 +67,7 @@ app.use("/api/vocab", vocabRoute);
 app.use("/api/rag", ragRoutes);
 app.use("/api/kanji", kanjiRoutes);
 app.use("/api/audio", audioRoutes);
+app.use("/api/reading", readingRoutes);
 
 // Health check endpoint (dùng cho FE, Render healthcheck và Bot Keep-Alive 5 phút/lần)
 app.get("/api/health", (req, res) => {
