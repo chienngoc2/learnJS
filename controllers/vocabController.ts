@@ -355,7 +355,7 @@ export const deleteList = asyncHandler(async (req: Request, res: Response): Prom
 // 🔥 3. CÁC HÀM XỬ LÝ NGỮ PHÁP TỐI ƯU HÓA (GRAMMAR CONTROLLERS)
 // =========================================================================
 
-// @desc    Thêm mới hoặc tạo mới bài học chứa ngữ pháp
+// @desc    Thêm mới hoặc cập nhật bài học chứa ngữ pháp (tránh trùng tiêu đề, hỗ trợ gộp không phân biệt hoa thường)
 // @route   POST /api/vocab/add-grammar-upsert
 export const addOrUpdateGrammar = asyncHandler(async (
   req: Request<{}, {}, AddGrammarReqBody>, 
@@ -371,44 +371,86 @@ export const addOrUpdateGrammar = asyncHandler(async (
 
   // Chuẩn hóa grammarPoints để đảm bảo examples luôn là mảng chuỗi và topicName được điền đầy đủ
   const normalizedGrammarPoints = grammarPoints.map((gp: any) => ({
-    title: gp.title,
-    formula: gp.formula || "",
-    meaning: gp.meaning,
+    title: String(gp.title || "").trim(),
+    formula: String(gp.formula || "").trim(),
+    meaning: String(gp.meaning || "").trim(),
     examples: Array.isArray(gp.examples)
       ? gp.examples.map((ex: any) => {
           if (typeof ex === "string") return ex;
           if (ex && typeof ex === "object") {
-            return `${ex.jp || ""} : ${ex.vn || ""}`;
+            return `${ex.jp || ex.cn || ""} : ${ex.vn || ""}`;
           }
           return String(ex);
-        })
+        }).filter(Boolean)
       : [],
     topicName: gp.topicName || cleanTopicName
-  }));
+  })).filter((gp: any) => gp.title && gp.meaning);
+
+  if (normalizedGrammarPoints.length === 0) {
+    throw new ValidationError("Không có cấu trúc ngữ pháp hợp lệ (cần có tiêu đề và ý nghĩa).");
+  }
 
   const authReq = req as AuthenticatedRequest;
   const userId = authReq.user?._id;
+  const escapedTitle = cleanTopicName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-  // 1. Tìm xem bài học đã tồn tại của chính user đó chưa
-  const query = userId 
-    ? { title: cleanTopicName, userId: userId } 
-    : { title: cleanTopicName, $or: [{ userId: { $exists: false } }, { userId: null }] };
+  // 1. Tìm xem bài học đã tồn tại của chính user đó chưa (không phân biệt hoa/thường)
+  const ownerFilter = userId
+    ? { userId }
+    : { $or: [{ userId: { $exists: false } }, { userId: null }] };
 
-  const existingList = await VocabList.findOne(query);
+  const existingList = await VocabList.findOne({
+    ...ownerFilter,
+    title: { $regex: new RegExp(`^${escapedTitle}$`, "i") },
+  });
 
   if (existingList) {
-    // TRƯỜNG HỢP 1: Tồn tại -> Chỉ cần Push thêm vào mảng cũ
-    await VocabList.updateOne(
-      { _id: existingList._id },
-      { $push: { grammarPoints: { $each: normalizedGrammarPoints } } }
-    );
-    
+    // TRƯỜNG HỢP 1: Tồn tại -> Gộp thông minh (chống trùng theo title)
+    const currentPoints: any[] = Array.isArray(existingList.grammarPoints)
+      ? [...existingList.grammarPoints]
+      : [];
+    const indexByTitle = new Map<string, number>();
+    currentPoints.forEach((gp, idx) => {
+      if (gp?.title) indexByTitle.set(String(gp.title).trim().toLowerCase(), idx);
+    });
+
+    let addedCount = 0;
+    let updatedCount = 0;
+
+    for (const gp of normalizedGrammarPoints) {
+      const key = gp.title.toLowerCase();
+      if (indexByTitle.has(key)) {
+        const idx = indexByTitle.get(key)!;
+        const prev = currentPoints[idx]?.toObject ? currentPoints[idx].toObject() : currentPoints[idx];
+        const mergedExamples = Array.from(new Set([...(prev.examples || []), ...(gp.examples || [])]));
+        currentPoints[idx] = {
+          ...prev,
+          formula: gp.formula || prev.formula || "",
+          meaning: gp.meaning || prev.meaning || "",
+          examples: mergedExamples,
+          topicName: existingList.title,
+        };
+        updatedCount++;
+      } else {
+        currentPoints.push({ ...gp, topicName: existingList.title });
+        indexByTitle.set(key, currentPoints.length - 1);
+        addedCount++;
+      }
+    }
+
+    existingList.grammarPoints = currentPoints as any;
+    await existingList.save();
+
     // Tự động đồng bộ Pinecone
     syncVocabListToPinecone(existingList._id.toString());
 
     res.status(200).json({ 
       success: true, 
-      message: "Đã thêm ngữ pháp vào bài học hiện có!" 
+      topicId: existingList._id,
+      topicTitle: existingList.title,
+      addedCount,
+      updatedCount,
+      message: `Đã lưu ngữ pháp vào bài "${existingList.title}" (thêm ${addedCount}, cập nhật ${updatedCount})!` 
     });
   } else {
     // TRƯỜNG HỢP 2: Chưa tồn tại -> Tạo mới hoàn toàn gắn với userId
@@ -426,7 +468,11 @@ export const addOrUpdateGrammar = asyncHandler(async (
 
     res.status(200).json({ 
       success: true, 
-      message: "Đã tạo mới bài học và lưu ngữ pháp thành công!" 
+      topicId: newList._id,
+      topicTitle: newList.title,
+      addedCount: normalizedGrammarPoints.length,
+      updatedCount: 0,
+      message: `Đã tạo mới bài "${newList.title}" và lưu ${normalizedGrammarPoints.length} ngữ pháp!` 
     });
   }
 });
