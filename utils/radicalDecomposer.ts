@@ -126,7 +126,7 @@ Chỉ trả về JSON hợp lệ.
 
     try {
       const text = await withGeminiRotation(async (client) => {
-        const models = ["gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-lite-latest"];
+        const models = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-lite-latest", "gemini-flash-latest"];
         let lastErr: any;
         for (const m of models) {
           try {
@@ -137,7 +137,12 @@ Chỉ trả về JSON hợp lệ.
                 temperature: 0.1,
               },
             });
-            const res = await model.generateContent(prompt);
+            const res = await Promise.race([
+              model.generateContent(prompt),
+              new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error(`Timeout 12s on ${m}`)), 12000)
+              ),
+            ]);
             const out = res.response.text();
             if (out) return out;
           } catch (e: any) {
