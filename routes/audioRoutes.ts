@@ -133,6 +133,58 @@ Chỉ trả về JSON hợp lệ, không thêm markdown.
 
     const cleaned = aiText.replace(/```json/gi, "").replace(/```/g, "").trim();
     const parsed = JSON.parse(cleaned);
+
+    const chineseText = String(parsed.chineseText || "").trim();
+    const pinyin = String(parsed.pinyin || "").trim();
+    const vietnameseText = String(parsed.vietnameseText || "").trim();
+
+    let keywords = Array.isArray(parsed.keywords)
+      ? parsed.keywords
+          .map((k: any) => ({
+            term: String(k?.term || k?.word || "").trim(),
+            pinyin: String(k?.pinyin || k?.reading || "").trim(),
+            meaning: String(k?.meaning || k?.meaningVi || k?.vietnamese || k?.definition || "").trim(),
+          }))
+          .filter((k: any) => k.term)
+      : [];
+
+    // Đảm bảo từ khóa luôn có nghĩa tiếng Việt; nếu là từ ngắn chưa có trong keywords thì tự bổ sung
+    keywords = keywords.map((k: any) => ({
+      ...k,
+      meaning: k.meaning || (k.term === chineseText ? vietnameseText : "") || vietnameseText,
+    }));
+
+    if (keywords.length === 0 && chineseText && chineseText.length <= 12 && vietnameseText) {
+      keywords = [
+        {
+          term: chineseText,
+          pinyin,
+          meaning: vietnameseText,
+        },
+      ];
+    }
+
+    parsed.chineseText = chineseText;
+    parsed.pinyin = pinyin;
+    parsed.vietnameseText = vietnameseText;
+    parsed.keywords = keywords;
+
+    // Tự động đưa từ vựng dịch được vào kho SharedVocab chung để tra cứu
+    try {
+      const { upsertSharedVocabBatch } = await import("../utils/sharedVocabService.js");
+      await upsertSharedVocabBatch(
+        keywords
+          .filter((k: any) => k.term && k.meaning)
+          .map((k: any) => ({
+            word: k.term,
+            pinyin: k.pinyin,
+            meaning: k.meaning,
+            level: "Đọc & Dịch",
+          })),
+        "Từ vựng đọc dịch"
+      );
+    } catch {}
+
     return res.status(200).json({ success: true, data: parsed });
   } catch (err: any) {
     console.error("❌ [API TranslateText] Lỗi:", err);
